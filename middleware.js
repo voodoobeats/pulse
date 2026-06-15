@@ -3,9 +3,9 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 // Only the visualizer itself requires login for now.
 const isProtectedRoute = createRouteMatcher(['/studio(.*)']);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
   if (isProtectedRoute(req)) {
-    await auth.protect();
+    auth().protect();
   }
 });
 

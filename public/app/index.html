@@ -1024,6 +1024,80 @@
     .scrubber { flex: 1; order: 0; }
     #renderBtn { flex: 0 0 auto; }
   }
+
+  /* ---------- Modular effect system ---------- */
+  .scene-details { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; background: rgba(255,255,255,0.012); }
+  .scene-details > summary {
+    cursor: pointer; list-style: none; padding: 12px 14px;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .scene-details > summary::-webkit-details-marker { display: none; }
+  .scene-details > summary::after { content: '+'; color: var(--ink-faint); font-size: 16px; }
+  .scene-details[open] > summary::after { content: '–'; }
+  .scene-details .scene-body { padding: 2px 14px 14px; }
+
+  .fx-stack { display: flex; flex-direction: column; gap: 12px; }
+  .effect-card {
+    border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2);
+    overflow: hidden;
+  }
+  .effect-card .fx-head {
+    display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+    border-bottom: 1px solid var(--line); background: rgba(255,255,255,0.02);
+  }
+  .effect-card .fx-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); flex: 0 0 auto; }
+  .effect-card .fx-title { font-size: 13px; font-weight: 600; color: var(--ink); flex: 1; letter-spacing: 0.02em; }
+  .effect-card .fx-remove {
+    flex: 0 0 auto; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line);
+    background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 15px; line-height: 1;
+    display: flex; align-items: center; justify-content: center; transition: all 0.12s ease;
+  }
+  .effect-card .fx-remove:hover { color: var(--red, #ff5d6c); border-color: var(--red, #ff5d6c); }
+  .effect-card .fx-body { padding: 12px 12px 14px; }
+  .effect-card.fx-off { opacity: 0.55; }
+  .effect-card.fx-off .fx-dot { background: var(--ink-faint); box-shadow: none; }
+
+  .fx-adv { margin-top: 6px; border-top: 1px dashed var(--line); }
+  .fx-adv > summary {
+    cursor: pointer; list-style: none; padding: 9px 0 2px;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .fx-adv > summary::-webkit-details-marker { display: none; }
+  .fx-adv > summary::before { content: '▸ '; }
+  .fx-adv[open] > summary::before { content: '▾ '; }
+
+  .color-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .color-row label.cb { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--ink-dim); cursor: pointer; }
+  .color-row input[type="color"] {
+    width: 34px; height: 26px; padding: 0; border: 1px solid var(--line-2); border-radius: 6px;
+    background: none; cursor: pointer;
+  }
+  .color-row input[type="color"]:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .fx-add-wrap { position: relative; margin-top: 14px; }
+  .fx-add-btn {
+    width: 100%; padding: 12px; border: 1px dashed var(--line-2); border-radius: 12px;
+    background: transparent; color: var(--ink-dim); cursor: pointer; font-size: 13px; font-weight: 500;
+    letter-spacing: 0.02em; transition: all 0.12s ease;
+  }
+  .fx-add-btn:hover { border-color: var(--accent); color: var(--ink); }
+  .fx-add-menu {
+    display: none; margin-top: 8px; border: 1px solid var(--line-2); border-radius: 12px;
+    background: var(--panel-2); overflow: hidden;
+  }
+  .fx-add-menu.open { display: block; }
+  .fx-add-menu button {
+    display: block; width: 100%; text-align: left; padding: 11px 14px; border: 0; border-bottom: 1px solid var(--line);
+    background: transparent; color: var(--ink); cursor: pointer; font-size: 13px;
+  }
+  .fx-add-menu button:last-child { border-bottom: 0; }
+  .fx-add-menu button:hover { background: rgba(255,255,255,0.04); color: var(--accent-2); }
+  .fx-add-menu .fx-add-empty { padding: 12px 14px; font-size: 12px; color: var(--ink-faint); }
+  select.fx-select {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2);
+    background: var(--panel); color: var(--ink); font-size: 12px;
+  }
 </style>
 </head>
 <body>
@@ -1054,7 +1128,7 @@
     <button class="active" data-tab="sources">Sources</button>
     <button data-tab="text">Text</button>
     <button data-tab="keys">Keys</button>
-    <button data-tab="motion">Motion</button>
+    <button data-tab="motion">Effects</button>
     <button data-tab="export">Export</button>
   </div>
 
@@ -1143,122 +1217,179 @@
         <span><span class="eq-label">Level</span><span class="eq-val" id="eqLevel">−24 to −6 dB</span></span>
         <span><span class="eq-label">Fill</span><span class="eq-val eq-fill" id="eqFill">0%</span></span>
       </div>
-      <div class="field">
-        <label>Shockwave Threshold <span class="v" id="shockThreshV">50%</span></label>
-        <input type="range" id="shockThresh" min="10" max="95" value="50" />
-      </div>
-      <div class="field">
-        <label>Shockwave Reset <span class="v" id="shockResetV">0.5s</span></label>
-        <input type="range" id="shockReset" min="0" max="40" value="5" />
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
-          0–4 seconds
-        </div>
-      </div>
     </div>
 
     <div class="section" data-section="motion">
-      <h3>Motion <span class="num">04</span></h3>
-      <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px;">
-        Effects on/off
-      </div>
-      <div class="toggles">
-        <label><input type="checkbox" id="tgShockwave" checked><span>Shockwave</span></label>
-        <label><input type="checkbox" id="tgParticles" checked><span>Particles</span></label>
-        <label><input type="checkbox" id="tgSpecTop" checked><span>Spec Top</span></label>
-        <label><input type="checkbox" id="tgSpecBot" checked><span>Spec Bottom</span></label>
-        <label><input type="checkbox" id="tgGrain" checked><span>Film Grain</span></label>
-        <label><input type="checkbox" id="tgAmbient" checked><span>Ambient FX</span></label>
-      </div>
-      <div class="field">
-        <label>Logo Size <span class="v" id="logoSizeV">110%</span></label>
-        <input type="range" id="logoSize" min="30" max="200" value="110" />
-      </div>
-      <div class="field">
-        <label>Logo Bounce <span class="v" id="logoBounceV">100%</span></label>
-        <input type="range" id="logoBounce" min="0" max="200" value="100" />
-      </div>
-      <div class="field">
-        <label>Background Bounce <span class="v" id="bgBounceV">100%</span></label>
-        <input type="range" id="bgBounce" min="0" max="200" value="100" />
-      </div>
-      <div class="field">
-        <label>BG Desaturation <span class="v" id="desatV">85%</span></label>
-        <input type="range" id="desat" min="0" max="100" value="85" />
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
-          Color returns on bass
-        </div>
-      </div>
-      <div class="field">
-        <label>BG Darkness <span class="v" id="darkV">60%</span></label>
-        <input type="range" id="dark" min="0" max="100" value="60" />
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
-          Brightens on bass
-        </div>
-      </div>
-      <div class="field">
-        <label>BG Shake <span class="v" id="shakeV">50%</span></label>
-        <input type="range" id="shake" min="0" max="200" value="50" />
-      </div>
-      <div class="field">
-        <label>Vignette Strength <span class="v" id="vigV">100%</span></label>
-        <input type="range" id="vig" min="0" max="100" value="100" />
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
-          Opens up on bass
-        </div>
-      </div>
-      <div class="field">
-        <label>Spectrum <span class="v" id="spectrumV">70%</span></label>
-        <input type="range" id="spectrum" min="0" max="100" value="70" />
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
-          Mirrored top &amp; bottom
-        </div>
-      </div>
-      <details class="subsection">
-        <summary>Spectrum Settings</summary>
-        <div class="field">
-          <label>Start Frequency <span class="v" id="specFStartV">20 Hz</span></label>
-          <input type="range" id="specFStart" min="0" max="2000" step="5" value="20" />
-        </div>
-        <div class="field">
-          <label>End Frequency <span class="v" id="specFEndV">8000 Hz</span></label>
-          <input type="range" id="specFEnd" min="200" max="20000" step="50" value="8000" />
-        </div>
-        <div class="field">
-          <label>Frequency Bands <span class="v" id="specBandsV">48</span></label>
-          <input type="range" id="specBands" min="8" max="1000" value="48" />
-        </div>
-        <div class="field">
-          <label>Max Height <span class="v" id="specMaxHV">22%</span></label>
-          <input type="range" id="specMaxH" min="5" max="40" value="22" />
-        </div>
-        <div class="field">
-          <label>Audio Duration <span class="v" id="specDurV">100 ms</span></label>
-          <input type="range" id="specDur" min="10" max="500" value="100" />
-        </div>
-        <div class="field">
-          <label>Audio Offset <span class="v" id="specOffV">0 ms</span></label>
-          <input type="range" id="specOff" min="-500" max="500" value="0" />
-        </div>
-        <div class="field">
-          <label>Thickness <span class="v" id="specThickV">55%</span></label>
-          <input type="range" id="specThick" min="10" max="95" value="55" />
-        </div>
-        <div class="field">
-          <label>Smoothing <span class="v" id="specSmoothV">30%</span></label>
-          <input type="range" id="specSmooth" min="0" max="95" value="30" />
+      <h3>Effects <span class="num">04</span></h3>
+
+      <details class="scene-details" open>
+        <summary>Scene · background · logo · vignette</summary>
+        <div class="scene-body">
+          <div class="field">
+            <label>Logo Size <span class="v" id="logoSizeV">110%</span></label>
+            <input type="range" id="logoSize" min="30" max="200" value="110" />
+          </div>
+          <div class="field">
+            <label>Logo Bounce <span class="v" id="logoBounceV">100%</span></label>
+            <input type="range" id="logoBounce" min="0" max="200" value="100" />
+          </div>
+          <div class="field">
+            <label>Background Bounce <span class="v" id="bgBounceV">100%</span></label>
+            <input type="range" id="bgBounce" min="0" max="200" value="100" />
+          </div>
+          <div class="field">
+            <label>BG Desaturation <span class="v" id="desatV">85%</span></label>
+            <input type="range" id="desat" min="0" max="100" value="85" />
+            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Color returns on bass</div>
+          </div>
+          <div class="field">
+            <label>BG Darkness <span class="v" id="darkV">60%</span></label>
+            <input type="range" id="dark" min="0" max="100" value="60" />
+            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Brightens on bass</div>
+          </div>
+          <div class="field">
+            <label>BG Shake <span class="v" id="shakeV">50%</span></label>
+            <input type="range" id="shake" min="0" max="200" value="50" />
+          </div>
+          <div class="field">
+            <label>Vignette Strength <span class="v" id="vigV">100%</span></label>
+            <input type="range" id="vig" min="0" max="100" value="100" />
+            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Opens up on bass</div>
+          </div>
+          <div class="field">
+            <label>FX Intensity <span class="v" id="effectsV">85%</span></label>
+            <input type="range" id="effects" min="0" max="100" value="85" />
+            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Particles · Shockwave · Grain</div>
+          </div>
         </div>
       </details>
-      <div class="field">
-        <label>FX Intensity <span class="v" id="effectsV">85%</span></label>
-        <input type="range" id="effects" min="0" max="100" value="85" />
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
-          Particles · Shockwave · Grain
+
+      <div class="fx-stack" id="fxStack">
+
+        <div class="effect-card" data-effect="glowbg">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Glow Background</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgGlowBg" checked hidden>
+            <div class="field"><label>Glow Intensity <span class="v" id="glowBgIntV">100%</span></label><input type="range" id="glowBgInt" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Glow Size <span class="v" id="glowBgSizeV">100%</span></label><input type="range" id="glowBgSize" min="20" max="200" value="100" /></div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_glowbg" checked> Use Background Color</label>
+              <input type="color" id="col_glowbg" value="#ff8c3c" disabled>
+            </div>
+          </div>
         </div>
+
+        <div class="effect-card" data-effect="shockwave">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Shockwave</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgShockwave" checked hidden>
+            <div class="field"><label>Threshold <span class="v" id="shockThreshV">50%</span></label><input type="range" id="shockThresh" min="10" max="95" value="50" /></div>
+            <div class="field"><label>Reset <span class="v" id="shockResetV">0.5s</span></label><input type="range" id="shockReset" min="0" max="40" value="5" /></div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_shockwave" checked> Use Background Color</label>
+              <input type="color" id="col_shockwave" value="#ff8c3c" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="logoglow" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Logo Glow</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgLogoGlow" hidden>
+            <div class="field"><label>Glow Intensity <span class="v" id="logoGlowIntV">100%</span></label><input type="range" id="logoGlowInt" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Glow Size <span class="v" id="logoGlowSizeV">100%</span></label><input type="range" id="logoGlowSize" min="0" max="200" value="100" /></div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbLogoColor" checked> Use Logo Color</label>
+              <input type="color" id="col_logoglow" value="#ffffff" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="particles">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Particles</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgParticles" checked hidden>
+            <div class="field"><label>Particle Origin</label>
+              <select id="partOrigin" class="fx-select">
+                <option value="middle" selected>Middle</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+              </select>
+            </div>
+            <div class="field"><label>Particle Direction</label>
+              <select id="partDirection" class="fx-select">
+                <option value="center" selected>Center / radial</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_particles" checked> Use Background Color</label>
+              <input type="color" id="col_particles" value="#ff8c3c" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="spectrum">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Audio Spectrum</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <div class="toggles" style="margin-bottom:10px">
+              <label><input type="checkbox" id="tgSpecTop" checked><span>Top</span></label>
+              <label><input type="checkbox" id="tgSpecBot" checked><span>Bottom</span></label>
+            </div>
+            <div class="field"><label>Amount <span class="v" id="spectrumV">70%</span></label><input type="range" id="spectrum" min="0" max="100" value="70" /></div>
+            <div class="field"><label>Max Height <span class="v" id="specMaxHV">22%</span></label><input type="range" id="specMaxH" min="5" max="40" value="22" /></div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_spectrum" checked> Use Background Color</label>
+              <input type="color" id="col_spectrum" value="#ff8c3c" disabled>
+            </div>
+            <details class="fx-adv">
+              <summary>Advanced</summary>
+              <div class="field"><label>Start Frequency <span class="v" id="specFStartV">20 Hz</span></label><input type="range" id="specFStart" min="0" max="2000" step="5" value="20" /></div>
+              <div class="field"><label>End Frequency <span class="v" id="specFEndV">8000 Hz</span></label><input type="range" id="specFEnd" min="200" max="20000" step="50" value="8000" /></div>
+              <div class="field"><label>Frequency Bands <span class="v" id="specBandsV">48</span></label><input type="range" id="specBands" min="8" max="1000" value="48" /></div>
+              <div class="field"><label>Audio Duration <span class="v" id="specDurV">100 ms</span></label><input type="range" id="specDur" min="10" max="500" value="100" /></div>
+              <div class="field"><label>Audio Offset <span class="v" id="specOffV">0 ms</span></label><input type="range" id="specOff" min="-500" max="500" value="0" /></div>
+              <div class="field"><label>Thickness <span class="v" id="specThickV">55%</span></label><input type="range" id="specThick" min="10" max="95" value="55" /></div>
+              <div class="field"><label>Smoothing <span class="v" id="specSmoothV">30%</span></label><input type="range" id="specSmooth" min="0" max="95" value="30" /></div>
+            </details>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="grain">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Film Grain</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgGrain" checked hidden>
+            <div class="field"><label>Grain Amount <span class="v" id="grainAmtV">50%</span></label><input type="range" id="grainAmt" min="0" max="100" value="50" /></div>
+            <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.4;">Monochrome film grain.</div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="ambient">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Ambient FX</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgAmbient" checked hidden>
+            <div style="font-size: 11px; color: var(--ink-dim); line-height: 1.5; margin-bottom: 4px;">Floating ambient particles for depth.</div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_ambient" checked> Use Background Color</label>
+              <input type="color" id="col_ambient" value="#ff8c3c" disabled>
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      <div class="fx-add-wrap">
+        <button class="fx-add-btn" id="fxAddBtn">+ Add effect</button>
+        <div class="fx-add-menu" id="fxAddMenu"></div>
+      </div>
+
       <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
-        <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px;">
-          Presets
-        </div>
+        <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px;">Presets</div>
         <div class="preset-row">
           <button id="saveBtn" title="Save current settings to a JSON file">Save</button>
           <button id="loadBtn" title="Load settings from a JSON file">Load</button>
@@ -1576,6 +1707,7 @@ setupFileInput('logoInput', 'dropLogo', 'logoPlaceholder', 'logoName', async (fi
   $('emptyState').style.display = 'none';
   // If no bg yet, use logo for palette
   if (!state.bgImg) await analyzeBgPalette(state.logoImg);
+  await analyzeLogoPalette(state.logoImg);
   drawPreviewFrame(getCurrentTime(), 0);
 });
 setupFileInput('bgInput', 'dropBg', 'bgPlaceholder', 'bgName', async (file) => {
@@ -1609,6 +1741,62 @@ setupFileInput('fontInput', 'dropFont', 'fontPlaceholder', 'fontName', async (fi
   }
 });
 
+// ============================================================
+// PER-EFFECT COLOR
+// Each effect either uses the sampled background color (default) or a custom
+// color. Logo Glow uses the sampled logo color instead of the background.
+// (Declared early — the color rows below read effectColors at setup.)
+// ============================================================
+let logoPalette = { accent: [255, 255, 255] };
+
+const effectColors = {
+  glowbg:    { useBg: true, rgb: [255, 140, 60] },
+  shockwave: { useBg: true, rgb: [255, 140, 60] },
+  particles: { useBg: true, rgb: [255, 140, 60] },
+  spectrum:  { useBg: true, rgb: [255, 140, 60] },
+  ambient:   { useBg: true, rgb: [255, 140, 60] },
+  logoglow:  { useBg: true, rgb: [255, 255, 255] }, // useBg === "use logo color"
+};
+
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
+  if (!m) return [255, 140, 60];
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function fxColor(name) {
+  const c = effectColors[name];
+  if (!c) return bgPalette.accent;
+  if (c.useBg) return name === 'logoglow' ? logoPalette.accent : bgPalette.accent;
+  return c.rgb;
+}
+
+async function analyzeLogoPalette(img) {
+  try {
+    const canvas = document.createElement('canvas');
+    const W = 64, H = 64;
+    canvas.width = W; canvas.height = H;
+    const cc = canvas.getContext('2d');
+    cc.drawImage(img, 0, 0, W, H);
+    const data = cc.getImageData(0, 0, W, H).data;
+    let r = 0, g = 0, b = 0, wSum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const a = data[i + 3];
+      if (a < 24) continue; // ignore transparent pixels (logos are usually PNG)
+      const pr = data[i], pg = data[i + 1], pb = data[i + 2];
+      const max = Math.max(pr, pg, pb), min = Math.min(pr, pg, pb);
+      const sat = max === 0 ? 0 : (max - min) / max;
+      const w = sat * (a / 255) + 0.05;
+      r += pr * w; g += pg * w; b += pb * w; wSum += w;
+    }
+    if (wSum > 0) {
+      const rgb = [Math.round(r / wSum), Math.round(g / wSum), Math.round(b / wSum)];
+      logoPalette = { accent: boostSaturation(rgb, 1.2) };
+    }
+  } catch (e) { console.warn('logo palette analysis failed:', e); }
+}
+
 // ---------- Range value display
 [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
@@ -1616,6 +1804,7 @@ setupFileInput('fontInput', 'dropFont', 'fontPlaceholder', 'fontName', async (fi
   'specFStart', 'specFEnd', 'specBands', 'specMaxH',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
+  'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
@@ -1643,7 +1832,7 @@ setupFileInput('fontInput', 'dropFont', 'fontPlaceholder', 'fontName', async (fi
 });
 
 // Toggle checkboxes — redraw preview on change
-['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient'].forEach(id => {
+['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -1652,6 +1841,142 @@ setupFileInput('fontInput', 'dropFont', 'fontPlaceholder', 'fontName', async (fi
     }
   });
 });
+
+// Particle origin / direction selects — redraw on change
+['partOrigin', 'partDirection'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('change', () => {
+    if (!state.isPlaying && (state.audioBuffer || state.logoImg || state.bgImg)) {
+      drawPreviewFrame(getCurrentTime(), 0);
+    }
+  });
+});
+
+// ============================================================
+// PER-EFFECT COLOR ROWS
+// "Use Background Color" (or "Use Logo Color" for Logo Glow) checked → sampled
+// color; unchecked → the custom color picker becomes active.
+// ============================================================
+const COLOR_ROWS = [
+  { fx: 'glowbg',    cb: 'cbBg_glowbg',    col: 'col_glowbg' },
+  { fx: 'shockwave', cb: 'cbBg_shockwave', col: 'col_shockwave' },
+  { fx: 'particles', cb: 'cbBg_particles', col: 'col_particles' },
+  { fx: 'spectrum',  cb: 'cbBg_spectrum',  col: 'col_spectrum' },
+  { fx: 'ambient',   cb: 'cbBg_ambient',   col: 'col_ambient' },
+  { fx: 'logoglow',  cb: 'cbLogoColor',    col: 'col_logoglow' },
+];
+
+function syncColorState(row) {
+  const cb = $(row.cb), col = $(row.col);
+  if (!cb || !col) return;
+  const useBg = cb.checked;
+  col.disabled = useBg;
+  effectColors[row.fx].useBg = useBg;
+  effectColors[row.fx].rgb = hexToRgb(col.value);
+}
+
+function redrawPreviewSafe() {
+  if (!state.isPlaying && (state.audioBuffer || state.logoImg || state.bgImg)) {
+    drawPreviewFrame(getCurrentTime(), 0);
+  }
+}
+
+COLOR_ROWS.forEach(row => {
+  const cb = $(row.cb), col = $(row.col);
+  if (!cb || !col) return;
+  cb.addEventListener('change', () => { syncColorState(row); redrawPreviewSafe(); });
+  col.addEventListener('input', () => { syncColorState(row); redrawPreviewSafe(); });
+  syncColorState(row); // initialise from default DOM state
+});
+
+// ============================================================
+// MODULAR EFFECT CARDS — add / remove
+// All effect cards always exist in the DOM (so the engine never reads a missing
+// input). "Added" = visible + toggle(s) on. "Removed" = hidden + toggle(s) off.
+// ============================================================
+const FX_TOGGLES = {
+  glowbg:    ['tgGlowBg'],
+  shockwave: ['tgShockwave'],
+  logoglow:  ['tgLogoGlow'],
+  particles: ['tgParticles'],
+  spectrum:  ['tgSpecTop', 'tgSpecBot'],
+  grain:     ['tgGrain'],
+  ambient:   ['tgAmbient'],
+};
+const FX_TITLES = {
+  glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
+  particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
+};
+const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient'];
+
+function fxCard(fx) { return document.querySelector('.effect-card[data-effect="' + fx + '"]'); }
+function fxIsAdded(fx) {
+  const card = fxCard(fx);
+  return !!card && card.style.display !== 'none';
+}
+function setToggles(fx, on) {
+  FX_TOGGLES[fx].forEach(tid => {
+    const el = $(tid);
+    if (el) { el.checked = on; el.dispatchEvent(new Event('change', { bubbles: true })); }
+  });
+}
+function addEffect(fx) {
+  const card = fxCard(fx);
+  if (!card) return;
+  card.style.display = '';
+  setToggles(fx, true);
+  rebuildAddMenu();
+  redrawPreviewSafe();
+}
+function removeEffect(fx) {
+  const card = fxCard(fx);
+  if (!card) return;
+  card.style.display = 'none';
+  setToggles(fx, false);
+  rebuildAddMenu();
+  redrawPreviewSafe();
+}
+function rebuildAddMenu() {
+  const menu = $('fxAddMenu');
+  if (!menu) return;
+  const missing = FX_ORDER.filter(fx => !fxIsAdded(fx));
+  menu.innerHTML = '';
+  if (missing.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'fx-add-empty';
+    d.textContent = 'All effects added.';
+    menu.appendChild(d);
+    return;
+  }
+  missing.forEach(fx => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = FX_TITLES[fx];
+    b.addEventListener('click', () => {
+      addEffect(fx);
+      menu.classList.remove('open');
+    });
+    menu.appendChild(b);
+  });
+}
+
+// Remove buttons on each card
+document.querySelectorAll('.effect-card .fx-remove').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const card = btn.closest('.effect-card');
+    if (card) removeEffect(card.dataset.effect);
+  });
+});
+
+// Add-effect button toggles the menu
+$('fxAddBtn').addEventListener('click', () => {
+  const menu = $('fxAddMenu');
+  rebuildAddMenu();
+  menu.classList.toggle('open');
+});
+
+rebuildAddMenu();
 
 // ---------- Bass detection
 // ============================================================
@@ -2094,6 +2419,7 @@ function boostSaturation(rgb, amount) {
 
 function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
 
+
 // ============================================================
 // ONSET DETECTION — find bass hit times for particle emission
 // ============================================================
@@ -2349,6 +2675,15 @@ function drawFrame(ctx, w, h, time, bass) {
   const tgSpecBot   = $('tgSpecBot').checked;
   const tgGrain     = $('tgGrain').checked;
   const tgAmbient   = $('tgAmbient').checked;
+  const tgGlowBg    = $('tgGlowBg').checked;
+  const tgLogoGlow  = $('tgLogoGlow').checked;
+  const glowBgInt   = parseFloat($('glowBgInt').value) / 100;
+  const glowBgSize  = parseFloat($('glowBgSize').value) / 100;
+  const logoGlowInt = parseFloat($('logoGlowInt').value) / 100;
+  const logoGlowSize= parseFloat($('logoGlowSize').value) / 100;
+  const partOrigin  = $('partOrigin').value;
+  const partDirection = $('partDirection').value;
+  const grainAmt    = parseFloat($('grainAmt').value) / 100;
 
   // ==========================================================
   // Bass Keys — the new single source of truth for bass reactivity.
@@ -2392,7 +2727,7 @@ function drawFrame(ctx, w, h, time, bass) {
   if (tgAmbient) {
     ctx.save();
     ctx.translate(shakeX * 0.4, shakeY * 0.4);
-    drawAmbientParticles(ctx, w, h, time, midAdj, bassAdj, effectsAmt);
+    drawAmbientParticles(ctx, w, h, time, midAdj, bassAdj, effectsAmt, fxColor('ambient'));
     ctx.restore();
   }
 
@@ -2411,27 +2746,32 @@ function drawFrame(ctx, w, h, time, bass) {
     logoW = logoBaseW * punchScale;
     logoH = logoBaseH * punchScale;
 
-    const glowColor = bgPalette.accent;
+    const glowColor = fxColor('glowbg');
 
-    // Outer soft glow — colored by bg palette
-    const glowRadius = Math.max(logoW, logoH) * (0.9 + bassAdj * 0.5);
-    const glowAlpha = Math.min(0.85, 0.25 + bassAdj * 0.75 * logoBounce);
-    const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
-    glowGrad.addColorStop(0,   rgba(glowColor, glowAlpha));
-    glowGrad.addColorStop(0.3, rgba(glowColor, glowAlpha * 0.55));
-    glowGrad.addColorStop(0.7, rgba(glowColor, glowAlpha * 0.15));
-    glowGrad.addColorStop(1,   rgba(glowColor, 0));
-    ctx.fillStyle = glowGrad;
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Expanding pulse-wave shockwaves on each bass onset — now much stronger
-    if (tgShockwave && effectsAmt > 0.01) {
-      drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, glowColor, Math.max(logoW, logoH));
+    // Outer soft glow — gated + scaled by the Glow Background effect
+    if (tgGlowBg) {
+      const glowRadius = Math.max(logoW, logoH) * (0.9 + bassAdj * 0.5) * glowBgSize;
+      const glowAlpha = Math.min(0.95, Math.min(0.85, 0.25 + bassAdj * 0.75 * logoBounce) * glowBgInt);
+      const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
+      glowGrad.addColorStop(0,   rgba(glowColor, glowAlpha));
+      glowGrad.addColorStop(0.3, rgba(glowColor, glowAlpha * 0.55));
+      glowGrad.addColorStop(0.7, rgba(glowColor, glowAlpha * 0.15));
+      glowGrad.addColorStop(1,   rgba(glowColor, 0));
+      ctx.fillStyle = glowGrad;
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
     }
 
-    // NOTE: aura ring + light shafts removed per user request — shockwave carries the "magic"
+    // Logo Glow — a tighter halo emitted by the logo (logo-colored by default)
+    if (tgLogoGlow) {
+      drawLogoGlow(ctx, cx, cy, logoW, logoH, fxColor('logoglow'), logoGlowInt, logoGlowSize, bassAdj);
+    }
+
+    // Expanding pulse-wave shockwaves on each bass onset
+    if (tgShockwave && effectsAmt > 0.01) {
+      drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, fxColor('shockwave'), Math.max(logoW, logoH));
+    }
 
     // The logo itself — with chromatic aberration on peaks
     drawLogoWithAberration(ctx, cx, cy, logoW, logoH, impulseAdj, effectsAmt, glowColor);
@@ -2439,7 +2779,7 @@ function drawFrame(ctx, w, h, time, bass) {
 
   // ========== LAYER 4: Bass-hit particle bursts (from center — share no shake for punch) ==========
   if (tgParticles) {
-    drawBurstParticles(ctx, w, h, time, effectsAmt);
+    drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection);
   }
 
   // ========== LAYER 4b: Audio spectrum (top + bottom can be toggled independently) ==========
@@ -2460,9 +2800,9 @@ function drawFrame(ctx, w, h, time, bass) {
     }
   }
 
-  // ========== LAYER 6: Film grain — now noticeably stronger ==========
-  if (tgGrain && effectsAmt > 0.05) {
-    drawGrain(ctx, w, h, time, effectsAmt * 0.18);
+  // ========== LAYER 6: Film grain ==========
+  if (tgGrain && grainAmt > 0.01) {
+    drawGrain(ctx, w, h, time, grainAmt * 0.35);
   }
 
   // ========== LAYER 7: Text overlays ==========
@@ -2872,7 +3212,7 @@ function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, drawTop, drawB
   specBarLastTime = time;
 
   // --- Draw the four mirrored spectrums ---
-  const color = bgPalette.accent;
+  const color = fxColor('spectrum');
   const halfW = w / 2;
   const barSlot = halfW / bands;
   const barWidth = Math.max(1, barSlot * thicknessPct);
@@ -3045,19 +3385,62 @@ function drawLightShafts(ctx, cx, cy, w, h, time, bass, impulse, effectsAmt, col
   ctx.restore();
 }
 
-function drawBurstParticles(ctx, w, h, time, effectsAmt) {
+function drawLogoGlow(ctx, cx, cy, logoW, logoH, color, intensity, size, bassAdj) {
+  if (!state.logoImg || intensity <= 0) return;
+  // A tight halo emitted by the logo — smaller and punchier than the Glow
+  // Background. Size scales the radius, intensity scales the brightness.
+  const r = Math.max(logoW, logoH) * (0.32 + 0.42 * size);
+  const a = Math.min(0.95, 0.40 * intensity * (0.65 + bassAdj * 0.55));
+  if (a < 0.01 || r < 1) return;
+  const g = ctx.createRadialGradient(cx, cy, Math.max(logoW, logoH) * 0.18, cx, cy, r);
+  g.addColorStop(0, rgba(color, a));
+  g.addColorStop(0.5, rgba(color, a * 0.45));
+  g.addColorStop(1, rgba(color, 0));
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = g;
+  ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+  ctx.restore();
+}
+
+function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction) {
   if (effectsAmt < 0.01 || !onsets || onsets.length === 0) return;
+
+  color = color || bgPalette.accent;
+  origin = origin || 'middle';
+  direction = direction || 'center';
 
   const lifetime = 1.2; // seconds
   const particlesPerBurst = 24;
   const cx = w / 2;
   const cy = h / 2;
-  const color = bgPalette.accent;
+  const radialDefault = (origin === 'middle' && direction === 'center');
+
+  // Spawn point for a given particle (rng in 0..1)
+  function spawnPoint(rng) {
+    switch (origin) {
+      case 'left':   return [0, rng() * h];
+      case 'right':  return [w, rng() * h];
+      case 'top':    return [rng() * w, 0];
+      case 'bottom': return [rng() * w, h];
+      default:       return [cx, cy];
+    }
+  }
+  // Base travel angle (radians). 'center' = toward frame center from spawn.
+  function baseAngle(sx, sy) {
+    if (direction === 'center') return Math.atan2(cy - sy, cx - sx);
+    switch (direction) {
+      case 'top':    return -Math.PI / 2;
+      case 'bottom': return  Math.PI / 2;
+      case 'left':   return  Math.PI;
+      case 'right':  return  0;
+      default:       return -Math.PI / 2;
+    }
+  }
 
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
 
-  // Bursts fire on every major bass onset (not gated to "the one")
   for (let o = 0; o < onsets.length; o++) {
     const onset = onsets[o];
     if (onset.time < state.fxStart) continue;
@@ -3069,14 +3452,23 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt) {
     const fade = Math.pow(1 - lifeProgress, 1.8);
     if (fade < 0.01) continue;
 
-    // Emit particles radially from center
     for (let p = 0; p < particlesPerBurst; p++) {
       const rng = makePRNG((o * 1000 + p) * 2654435761);
-      const angle = (p / particlesPerBurst) * Math.PI * 2 + rng() * 0.6;
+
+      const [sx, sy] = spawnPoint(rng);
+      let angle;
+      if (radialDefault) {
+        // Classic radial burst from center (preserves the original look)
+        angle = (p / particlesPerBurst) * Math.PI * 2 + rng() * 0.6;
+      } else {
+        // Cone of particles around the chosen direction (±40°)
+        angle = baseAngle(sx, sy) + (rng() - 0.5) * 1.4;
+      }
+
       const speed = (0.18 + rng() * 0.35) * Math.max(w, h) * (0.8 + strength * 0.8);
       const gravity = (rng() - 0.5) * 30; // slight drift
-      const px = cx + Math.cos(angle) * speed * age + gravity * age * age;
-      const py = cy + Math.sin(angle) * speed * age;
+      const px = sx + Math.cos(angle) * speed * age + gravity * age * age;
+      const py = sy + Math.sin(angle) * speed * age;
       const size = (1.5 + rng() * 3) * effectsAmt * (0.5 + strength);
 
       if (px < -50 || px > w + 50 || py < -50 || py > h + 50) continue;
@@ -3100,13 +3492,13 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt) {
   ctx.restore();
 }
 
-function drawAmbientParticles(ctx, w, h, time, midAdj, bassAdj, effectsAmt) {
+function drawAmbientParticles(ctx, w, h, time, midAdj, bassAdj, effectsAmt, color) {
   if (effectsAmt < 0.01) return;
 
   // DOUBLED count, HALF size (per user request)
   // Base speed 10% of before, accelerates heavily with bass
   const count = 160;
-  const color = bgPalette.accent;
+  color = color || bgPalette.accent;
   const baseAlpha = 0.08 + midAdj * 0.4;
   const brightness = baseAlpha * effectsAmt;
   if (brightness < 0.01) return;
@@ -3211,7 +3603,7 @@ function drawGrain(ctx, w, h, time, intensity) {
   // Draw upscaled with overlay blending — makes midtone gray neutral, pushes lights up / darks down
   ctx.save();
   ctx.globalCompositeOperation = 'overlay';
-  ctx.globalAlpha = Math.min(0.5, intensity * 3); // noticeable but not overwhelming
+  ctx.globalAlpha = Math.min(0.6, intensity * 2.4); // noticeable but not overwhelming
   ctx.imageSmoothingEnabled = false; // keep the crunchy film-grain texture
   ctx.drawImage(offCanvas, 0, 0, w, h);
   ctx.imageSmoothingEnabled = true;
@@ -5015,20 +5407,31 @@ const PRESET_SLIDER_IDS = [
   'specFStart', 'specFEnd', 'specBands', 'specMaxH',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
+  'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
 ];
 const PRESET_TEXT_IDS = ['topText', 'botText'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow'];
+
+function gatherEffects() {
+  const colors = {};
+  COLOR_ROWS.forEach(row => {
+    const col = $(row.col);
+    colors[row.fx] = { useBg: $(row.cb).checked, hex: col ? col.value : '#ff8c3c' };
+  });
+  return { added: FX_ORDER.filter(fxIsAdded), colors };
+}
 
 function gatherPreset() {
   const preset = {
-    version: 2,
+    version: 3,
     createdAt: new Date().toISOString(),
     sliders: {},
     text: {},
     selects: {},
     toggles: {},
     keys: { ...bassKeys },
+    effects: gatherEffects(),
   };
   PRESET_SLIDER_IDS.forEach(id => {
     const el = $(id);
@@ -5049,9 +5452,51 @@ function gatherPreset() {
   return preset;
 }
 
+function setTogglesQuiet(fx, on) {
+  if (on) {
+    if (fx === 'spectrum') {
+      if (!$('tgSpecTop').checked && !$('tgSpecBot').checked) $('tgSpecTop').checked = true;
+    } else {
+      FX_TOGGLES[fx].forEach(tid => { const e = $(tid); if (e) e.checked = true; });
+    }
+  } else {
+    FX_TOGGLES[fx].forEach(tid => { const e = $(tid); if (e) e.checked = false; });
+  }
+}
+
+function applyEffects(effects) {
+  // Colors (default: Use Background Color = on; presets may override)
+  if (effects && effects.colors) {
+    COLOR_ROWS.forEach(row => {
+      const c = effects.colors[row.fx];
+      if (!c) return;
+      const cb = $(row.cb), col = $(row.col);
+      if (cb) cb.checked = !!c.useBg;
+      if (col && c.hex) col.value = c.hex;
+      syncColorState(row);
+    });
+  }
+  // Which cards are visible / active
+  let added;
+  if (effects && Array.isArray(effects.added)) {
+    added = effects.added;
+  } else {
+    // Back-compat (v1/v2 presets): derive from the toggle state we just applied
+    added = FX_ORDER.filter(fx => FX_TOGGLES[fx].some(tid => { const e = $(tid); return e && e.checked; }));
+  }
+  FX_ORDER.forEach(fx => {
+    const card = fxCard(fx);
+    if (!card) return;
+    const on = added.includes(fx);
+    card.style.display = on ? '' : 'none';
+    setTogglesQuiet(fx, on);
+  });
+  rebuildAddMenu();
+}
+
 function applyPreset(preset, silent) {
-  // Accept both v1 (no toggles) and v2 (with toggles) — forward compatible
-  if (!preset || (preset.version !== 1 && preset.version !== 2)) {
+  // Accept v1 (no toggles), v2 (toggles) and v3 (modular effects) — forward compatible
+  if (!preset || (preset.version !== 1 && preset.version !== 2 && preset.version !== 3)) {
     if (!silent) toast('Preset file is missing or incompatible', 'error');
     return;
   }
@@ -5098,6 +5543,9 @@ function applyPreset(preset, silent) {
   // NOTE: fxStart (the draggable FX start marker on the scrubber) is intentionally
   // NOT read from presets. It stays exactly where you placed it, independent of
   // loading or resetting presets.
+
+  // Modular effects: which cards are active + per-effect colors
+  applyEffects(preset.effects);
 
   // Re-render everything to reflect the new settings
   drawEqWidget();
@@ -5146,7 +5594,7 @@ $('resetBtn').addEventListener('click', () => {
   if (!confirm('Reset all settings to defaults?')) return;
   // Default preset — mirrors the initial HTML values
   const defaults = {
-    version: 2,
+    version: 3,
     sliders: {
       logoSize: '110', logoBounce: '100', bgBounce: '100',
       desat: '85', dark: '60', shake: '50', vig: '100',
@@ -5156,15 +5604,32 @@ $('resetBtn').addEventListener('click', () => {
       specMaxH: '22', specDur: '100', specOff: '0',
       specThick: '55', specSmooth: '30',
       shortFadeIn: '1', shortFadeOut: '3',
+      glowBgInt: '100', glowBgSize: '100', logoGlowInt: '100', logoGlowSize: '100',
+      grainAmt: '50',
     },
     text: { topText: '', botText: '' },
-    selects: { fontStyle: 'cormorant', resolution: '1080', framerate: '60' },
+    selects: {
+      fontStyle: 'cormorant', resolution: '1080', framerate: '60',
+      partOrigin: 'middle', partDirection: 'center',
+    },
     toggles: {
       tgShockwave: true, tgParticles: true,
       tgSpecTop: true, tgSpecBot: true,
       tgGrain: true, tgAmbient: true,
+      tgGlowBg: true, tgLogoGlow: false,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
+    effects: {
+      added: ['glowbg', 'shockwave', 'particles', 'spectrum', 'grain', 'ambient'],
+      colors: {
+        glowbg: { useBg: true, hex: '#ff8c3c' },
+        shockwave: { useBg: true, hex: '#ff8c3c' },
+        particles: { useBg: true, hex: '#ff8c3c' },
+        spectrum: { useBg: true, hex: '#ff8c3c' },
+        ambient: { useBg: true, hex: '#ff8c3c' },
+        logoglow: { useBg: true, hex: '#ffffff' },
+      },
+    },
   };
   applyPreset(defaults);
 });
@@ -5185,7 +5650,7 @@ function restoreAutosave() {
     const raw = localStorage.getItem(AUTOSAVE_KEY);
     if (!raw) return;
     const preset = JSON.parse(raw);
-    if (preset && (preset.version === 1 || preset.version === 2)) applyPreset(preset, true);
+    if (preset && (preset.version === 1 || preset.version === 2 || preset.version === 3)) applyPreset(preset, true);
   } catch (_) {}
 }
 

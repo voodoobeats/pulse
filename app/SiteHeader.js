@@ -15,7 +15,7 @@ export default function SiteHeader() {
     <header className="nav">
       <Link href="/" className="brand">PULSE</Link>
       <nav className="nav-links">
-        <Link href="/pricing" className="nav-link">Preise</Link>
+        <Link href="/pricing" className="nav-link">Pricing</Link>
         <SignedOut>
           <Link href="/sign-in" className="btn ghost">Login</Link>
         </SignedOut>

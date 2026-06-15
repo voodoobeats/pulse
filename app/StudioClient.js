@@ -53,7 +53,7 @@ export default function StudioClient() {
   return (
     <>
       <div className="studio-account">
-        <Link href="/pricing" className="acct-link">Preise</Link>
+        <Link href="/pricing" className="acct-link">Pricing</Link>
         <SignedOut>
           <Link href="/sign-in" className="acct-link">Login</Link>
         </SignedOut>
@@ -73,10 +73,10 @@ export default function StudioClient() {
       {modal === 'login' && (
         <div className="modal-overlay" onClick={cancel}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <p className="modal-title">Zum Rendern anmelden</p>
-            <p className="modal-text">Einstellen und Vorschau sind frei — fürs Rendern brauchst du einen Account.</p>
+            <p className="modal-title">Sign in to render</p>
+            <p className="modal-text">Editing and preview are free — rendering requires an account.</p>
             <SignIn routing="hash" signUpUrl="/sign-up" fallbackRedirectUrl="/" />
-            <button className="modal-close" onClick={cancel}>Abbrechen</button>
+            <button className="modal-close" onClick={cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -84,10 +84,10 @@ export default function StudioClient() {
       {modal === 'premium' && (
         <div className="modal-overlay" onClick={cancel}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <p className="modal-title">Premium benötigt</p>
-            <p className="modal-text">Rendern und Shorts-Export sind Premium-Mitgliedern vorbehalten.</p>
-            <Link href="/pricing" className="btn primary modal-cta">Premium ansehen</Link>
-            <button className="modal-close" onClick={cancel}>Schließen</button>
+            <p className="modal-title">Premium required</p>
+            <p className="modal-text">Rendering and Shorts export are reserved for Premium members.</p>
+            <Link href="/pricing" className="btn primary modal-cta">View Premium</Link>
+            <button className="modal-close" onClick={cancel}>Close</button>
           </div>
         </div>
       )}

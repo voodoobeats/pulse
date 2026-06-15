@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 
-const MONTHLY = '9,99';
-const YEARLY_PER_MONTH = '7,99';
-const YEARLY_TOTAL = '95,90';
+const MONTHLY = '9.99';
+const YEARLY_PER_MONTH = '7.99';
+const YEARLY_TOTAL = '95.90';
 
 export default function PricingPage() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -32,10 +32,10 @@ export default function PricingPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else { setLoading(false); alert('Checkout konnte nicht gestartet werden.'); }
+      else { setLoading(false); alert('Could not start checkout.'); }
     } catch {
       setLoading(false);
-      alert('Etwas ist schiefgelaufen.');
+      alert('Something went wrong.');
     }
   }
 
@@ -45,9 +45,9 @@ export default function PricingPage() {
       const res = await fetch('/api/portal', { method: 'POST' });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; return; }
-      alert(data.error || 'Das Abo-Portal konnte nicht geöffnet werden.');
+      alert(data.error || 'Could not open the subscription portal.');
     } catch {
-      alert('Verbindung zum Abo-Portal fehlgeschlagen.');
+      alert('Connection to the subscription portal failed.');
     }
     setLoading(false);
   }
@@ -57,21 +57,21 @@ export default function PricingPage() {
   return (
     <div className="page">
       <h1>Premium</h1>
-      <p className="sub">Rendern, 4K-Export und Shorts — ohne Limit.</p>
+      <p className="sub">Rendering, 4K export and Shorts — no limits.</p>
 
       {banner === 'success' && (
-        <div className="banner ok">Willkommen bei Premium! Dein Zugang ist gleich aktiv.</div>
+        <div className="banner ok">Welcome to Premium! Your access will be active shortly.</div>
       )}
       {banner === 'canceled' && (
-        <div className="banner">Checkout abgebrochen — du kannst es jederzeit erneut versuchen.</div>
+        <div className="banner">Checkout canceled — you can try again anytime.</div>
       )}
 
       <div className="billing-toggle">
         <button className={!yearly ? 'active' : ''} onClick={() => setBilling('monthly')}>
-          Monatlich
+          Monthly
         </button>
         <button className={yearly ? 'active' : ''} onClick={() => setBilling('yearly')}>
-          Jährlich <span className="save">-20%</span>
+          Yearly <span className="save">-20%</span>
         </button>
       </div>
 
@@ -81,38 +81,38 @@ export default function PricingPage() {
           <h3>Pulse Premium</h3>
 
           <div className="price">
-            {yearly ? YEARLY_PER_MONTH : MONTHLY} € <small>/ Monat</small>
+            &euro;{yearly ? YEARLY_PER_MONTH : MONTHLY} <small>/ month</small>
           </div>
 
           {yearly ? (
-            <p className="price-note"><s>{MONTHLY} €</s> &nbsp;&middot;&nbsp; {YEARLY_TOTAL} &euro; jährlich abgerechnet</p>
+            <p className="price-note"><s>&euro;{MONTHLY}</s> &nbsp;&middot;&nbsp; &euro;{YEARLY_TOTAL} billed annually</p>
           ) : (
-            <p className="price-note">Monatlich kündbar</p>
+            <p className="price-note">Cancel anytime</p>
           )}
 
           <ul>
-            <li>Unbegrenztes Rendern (1080p/60 &amp; 4K)</li>
-            <li>Shorts-Export (vertikal 9:16)</li>
-            <li>Keine Wartezeit</li>
-            <li>Jederzeit kündbar</li>
+            <li>Unlimited rendering (1080p/60 &amp; 4K)</li>
+            <li>Shorts export (vertical 9:16)</li>
+            <li>No wait time</li>
+            <li>Cancel anytime</li>
           </ul>
 
           {!isLoaded ? (
             <button className="btn" disabled>&hellip;</button>
           ) : isPremium ? (
             <>
-              <div className="premium-active">&#10003; Du bist Premium</div>
-              <button className="btn ghost" onClick={manage} disabled={loading}>Abo verwalten</button>
+              <div className="premium-active">&#10003; You&rsquo;re Premium</div>
+              <button className="btn ghost" onClick={manage} disabled={loading}>Manage subscription</button>
             </>
           ) : (
             <button className="btn primary" onClick={subscribe} disabled={loading}>
-              {loading ? 'Weiter zu Stripe…' : 'Premium holen'}
+              {loading ? 'Continuing to Stripe…' : 'Get Premium'}
             </button>
           )}
         </div>
       </div>
 
-      <p className="pay-note">Sichere Zahlung über Stripe &middot; jederzeit kündbar</p>
+      <p className="pay-note">Secure payment via Stripe &middot; cancel anytime</p>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useAuth, useUser, SignIn } from '@clerk/nextjs';
+import { useAuth, useUser, SignIn, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 
 export default function StudioClient() {
@@ -51,10 +51,20 @@ export default function StudioClient() {
 
   return (
     <>
+      <div className="studio-account">
+        <Link href="/pricing" className="acct-link">Preise</Link>
+        <SignedOut>
+          <Link href="/sign-in" className="acct-link">Login</Link>
+        </SignedOut>
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
+      </div>
+
       <iframe
         ref={iframeRef}
         src="/app/index.html"
-        title="Voodoo Visualizer"
+        title="Pulse"
         className="studio-frame"
         allow="autoplay; clipboard-write; fullscreen"
       />

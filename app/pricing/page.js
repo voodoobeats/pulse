@@ -44,9 +44,12 @@ export default function PricingPage() {
     try {
       const res = await fetch('/api/portal', { method: 'POST' });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setLoading(false);
-    } catch { setLoading(false); }
+      if (data.url) { window.location.href = data.url; return; }
+      alert(data.error || 'Das Abo-Portal konnte nicht geöffnet werden.');
+    } catch {
+      alert('Verbindung zum Abo-Portal fehlgeschlagen.');
+    }
+    setLoading(false);
   }
 
   const yearly = interval === 'yearly';
@@ -75,7 +78,7 @@ export default function PricingPage() {
       <div className="tiers" style={{ maxWidth: '360px' }}>
         <div className="tier featured">
           <span className="badge">Premium</span>
-          <h3>Voodoo Premium</h3>
+          <h3>Pulse Premium</h3>
 
           <div className="price">
             {yearly ? YEARLY_PER_MONTH : MONTHLY} € <small>/ Monat</small>

@@ -1,4 +1,4 @@
-export const metadata = { title: 'Impressum — Voodoo Visualizer' };
+export const metadata = { title: 'Impressum — Pulse' };
 
 export default function ImpressumPage() {
   return (

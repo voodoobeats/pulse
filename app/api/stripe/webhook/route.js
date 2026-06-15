@@ -19,6 +19,7 @@ async function syncPlan(userId, subscription, customerId) {
       stripeCustomerId: customerId || subscription.customer || null,
       stripeSubscriptionId: subscription.id,
       currentPeriodEnd: subscription.current_period_end || null,
+      cancelAtPeriodEnd: !!subscription.cancel_at_period_end,
     },
   });
 }

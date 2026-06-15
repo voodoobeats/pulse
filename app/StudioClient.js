@@ -21,6 +21,15 @@ export default function StudioClient() {
     return () => document.body.classList.remove('studio-locked');
   }, []);
 
+  // Verify the real subscription status against Stripe on load (self-heals a
+  // missed webhook), then refresh the local Clerk user.
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    fetch('/api/sync', { method: 'POST' })
+      .catch(() => {})
+      .finally(() => user.reload());
+  }, [isSignedIn, user?.id]);
+
   function approve() {
     const kind = pendingKind.current || 'main';
     iframeRef.current?.contentWindow?.postMessage(

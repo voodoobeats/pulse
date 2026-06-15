@@ -13,7 +13,14 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState(null);
 
-  const isPremium = user?.publicMetadata?.plan === 'premium';
+  const md = user?.publicMetadata || {};
+  const isPremium = md.plan === 'premium';
+  const cancelAtPeriodEnd = !!md.cancelAtPeriodEnd;
+  const endsOn = md.currentPeriodEnd
+    ? new Date(md.currentPeriodEnd * 1000).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      })
+    : null;
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -27,15 +34,16 @@ export default function PricingPage() {
   // (the webhook updates the status asynchronously).
   useEffect(() => {
     if (!isSignedIn || !user) return;
-    user.reload();
-    const onFocus = () => user.reload();
+    const sync = () => fetch('/api/sync', { method: 'POST' }).catch(() => {}).finally(() => user.reload());
+    sync();
+    const onFocus = () => sync();
     window.addEventListener('focus', onFocus);
     const timers = [];
     const p = new URLSearchParams(window.location.search);
     if (p.get('success')) {
-      timers.push(setTimeout(() => user.reload(), 1500));
-      timers.push(setTimeout(() => user.reload(), 4000));
-      timers.push(setTimeout(() => user.reload(), 8000));
+      timers.push(setTimeout(sync, 1500));
+      timers.push(setTimeout(sync, 4000));
+      timers.push(setTimeout(sync, 8000));
     }
     return () => {
       window.removeEventListener('focus', onFocus);
@@ -125,6 +133,9 @@ export default function PricingPage() {
             <>
               <div className="premium-active">&#10003; You&rsquo;re Premium</div>
               <button className="btn ghost" onClick={manage} disabled={loading}>Manage subscription</button>
+              {cancelAtPeriodEnd && endsOn && (
+                <p className="cancel-note">Your premium status ends on {endsOn}</p>
+              )}
             </>
           ) : (
             <button className="btn primary" onClick={subscribe} disabled={loading}>

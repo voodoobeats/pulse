@@ -21,6 +21,28 @@ export default function PricingPage() {
     else if (p.get('canceled')) setBanner('canceled');
   }, []);
 
+  // Reflect the current Clerk status — avoids a stale "Manage subscription"
+  // button or crown after subscribing, cancelling, or a failed payment.
+  // Refresh on mount, on focus, and a few times after returning from Stripe
+  // (the webhook updates the status asynchronously).
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    user.reload();
+    const onFocus = () => user.reload();
+    window.addEventListener('focus', onFocus);
+    const timers = [];
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('success')) {
+      timers.push(setTimeout(() => user.reload(), 1500));
+      timers.push(setTimeout(() => user.reload(), 4000));
+      timers.push(setTimeout(() => user.reload(), 8000));
+    }
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      timers.forEach(clearTimeout);
+    };
+  }, [isSignedIn, user?.id]);
+
   async function subscribe() {
     if (!isSignedIn) { window.location.href = '/sign-in'; return; }
     setLoading(true);
@@ -32,7 +54,7 @@ export default function PricingPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else { setLoading(false); alert('Could not start checkout.'); }
+      else { setLoading(false); alert(data.error || 'Could not start checkout.'); }
     } catch {
       setLoading(false);
       alert('Something went wrong.');

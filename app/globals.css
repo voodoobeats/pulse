@@ -128,9 +128,13 @@ a { color: inherit; text-decoration: none; }
 .studio-frame {
   width: 100%;
   height: calc(100vh - var(--footer-h));
+  height: calc(100dvh - var(--footer-h));
   border: 0;
   display: block;
 }
+
+/* lock the studio so the floating account bar can't drift on mobile scroll */
+body.studio-locked { overflow: hidden; }
 
 /* ---------- Pricing ---------- */
 .page {

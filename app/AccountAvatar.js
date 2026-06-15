@@ -1,12 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 
 // Renders the Clerk user button, with a small gold crown above the avatar
-// for premium members.
+// for premium members. The premium flag is read live from Clerk and refreshed
+// on mount and whenever the tab regains focus (e.g. returning from Stripe).
 export default function AccountAvatar() {
-  const { user } = useUser();
+  const { isSignedIn, user } = useUser();
   const isPremium = user?.publicMetadata?.plan === 'premium';
+
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    user.reload();
+    const onFocus = () => user.reload();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [isSignedIn, user?.id]);
 
   return (
     <span className={'acct-avatar' + (isPremium ? ' is-premium' : '')}>

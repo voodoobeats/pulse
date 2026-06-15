@@ -5049,10 +5049,10 @@ function gatherPreset() {
   return preset;
 }
 
-function applyPreset(preset) {
+function applyPreset(preset, silent) {
   // Accept both v1 (no toggles) and v2 (with toggles) — forward compatible
   if (!preset || (preset.version !== 1 && preset.version !== 2)) {
-    toast('Preset file is missing or incompatible', 'error');
+    if (!silent) toast('Preset file is missing or incompatible', 'error');
     return;
   }
   if (preset.sliders) {
@@ -5105,7 +5105,7 @@ function applyPreset(preset) {
     drawPreviewFrame(getCurrentTime(), 0);
   }
   if (state.audioBuffer) computeShockwaveOnsets();
-  toast('Preset loaded', 'success');
+  if (!silent) toast('Preset loaded', 'success');
 }
 
 $('saveBtn').addEventListener('click', () => {
@@ -5168,6 +5168,39 @@ $('resetBtn').addEventListener('click', () => {
   };
   applyPreset(defaults);
 });
+
+// ============================================================
+// AUTOSAVE — keep settings across reloads (login redirect, Stripe, refresh).
+// Audio/image files can't be restored automatically, but every slider, color,
+// text, FX toggle and key setting is preserved so you never start from scratch.
+// ============================================================
+const AUTOSAVE_KEY = 'pulse_autosave_v2';
+
+function autosaveNow() {
+  try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(gatherPreset())); } catch (_) {}
+}
+
+function restoreAutosave() {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return;
+    const preset = JSON.parse(raw);
+    if (preset && (preset.version === 1 || preset.version === 2)) applyPreset(preset, true);
+  } catch (_) {}
+}
+
+let _autosaveTimer = null;
+function autosaveDebounced() {
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(autosaveNow, 400);
+}
+
+restoreAutosave();
+
+document.addEventListener('input', autosaveDebounced, true);
+document.addEventListener('change', autosaveDebounced, true);
+window.addEventListener('beforeunload', autosaveNow);
+document.addEventListener('visibilitychange', () => { if (document.hidden) autosaveNow(); });
 
 // Initial state
 setStatus('Idle');

@@ -14,6 +14,13 @@ export default function StudioClient() {
 
   const isPremium = !!user && user.publicMetadata?.plan === 'premium';
 
+  // Lock page scroll on the studio so the floating account bar stays pinned
+  // on mobile (the visualizer scrolls internally inside the iframe).
+  useEffect(() => {
+    document.body.classList.add('studio-locked');
+    return () => document.body.classList.remove('studio-locked');
+  }, []);
+
   function approve() {
     const kind = pendingKind.current || 'main';
     iframeRef.current?.contentWindow?.postMessage(

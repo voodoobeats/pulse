@@ -1,8 +1,14 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-// Minimal: stellt Clerks Auth-Kontext fürs SSR bereit. Noch kein Routenschutz —
-// /studio bleibt vorerst offen (bauen wir später ein).
-export default clerkMiddleware();
+// Login-Pflicht für Studio und Pricing. Nicht eingeloggte Nutzer werden
+// automatisch auf /sign-in geschickt.
+const isProtectedRoute = createRouteMatcher(['/studio(.*)', '/pricing(.*)']);
+
+export default clerkMiddleware((auth, req) => {
+  if (isProtectedRoute(req)) {
+    auth().protect();
+  }
+});
 
 export const config = {
   matcher: [

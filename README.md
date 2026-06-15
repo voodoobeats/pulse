@@ -9,7 +9,7 @@ Browser. Build ist getestet und läuft.
 ## Was schon drin ist
 - `/` Landing
 - `/sign-in`, `/sign-up` — Login/Registrierung (Clerk)
-- `/studio` — der Visualizer (nur eingeloggt), eingebettet als iframe
+- `/studio` — der Visualizer (aktuell offen; Login-Schutz kommt als nächster Schritt)
 - `/pricing` — Free aktiv, Premium ausgegraut („Bald verfügbar")
 - `/impressum` — Platzhalter (vor Launch ausfüllen)
 

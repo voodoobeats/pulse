@@ -2,7 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut } from '@clerk/nextjs';
+import AccountAvatar from './AccountAvatar';
 
 // Slim header for sub-pages. The studio (/) has no top bar — it uses its own
 // floating account control so the visualizer gets the full height.
@@ -19,7 +20,7 @@ export default function SiteHeader() {
           <Link href="/sign-in" className="btn ghost">Login</Link>
         </SignedOut>
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+          <AccountAvatar />
         </SignedIn>
       </nav>
     </header>

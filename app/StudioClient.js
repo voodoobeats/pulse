@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useAuth, useUser, SignIn, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { useAuth, useUser, SignIn, SignedIn, SignedOut } from '@clerk/nextjs';
 import Link from 'next/link';
+import AccountAvatar from './AccountAvatar';
 
 export default function StudioClient() {
   const iframeRef = useRef(null);
@@ -57,7 +58,7 @@ export default function StudioClient() {
           <Link href="/sign-in" className="acct-link">Login</Link>
         </SignedOut>
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+          <AccountAvatar />
         </SignedIn>
       </div>
 

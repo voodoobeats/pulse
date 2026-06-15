@@ -1,4 +1,4 @@
-import { ClerkProvider, SignedIn, UserButton } from '@clerk/nextjs';
+import { ClerkProvider, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import './globals.css';
 
@@ -12,16 +12,18 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="de">
         <body>
-          <SignedIn>
-            <header className="nav">
-              <Link href="/studio" className="brand">VOODOO<span>VISUALIZER</span></Link>
-              <nav className="nav-links">
-                <Link href="/studio" className="nav-link">Studio</Link>
-                <Link href="/pricing" className="nav-link">Preise</Link>
+          <header className="nav">
+            <Link href="/" className="brand">VOODOO<span>VISUALIZER</span></Link>
+            <nav className="nav-links">
+              <Link href="/pricing" className="nav-link">Preise</Link>
+              <SignedOut>
+                <Link href="/sign-in" className="btn ghost">Login</Link>
+              </SignedOut>
+              <SignedIn>
                 <UserButton afterSignOutUrl="/" />
-              </nav>
-            </header>
-          </SignedIn>
+              </SignedIn>
+            </nav>
+          </header>
           <main className="main">{children}</main>
         </body>
       </html>

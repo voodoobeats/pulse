@@ -200,3 +200,39 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   color: var(--ink-faint);
 }
+
+/* ---------- Render gate modals ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 7, 13, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  padding: 26px 24px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.modal-title { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+.modal-text { font-size: 13px; color: var(--ink-dim); margin: 0 0 18px; line-height: 1.6; }
+.modal-cta { display: inline-block; margin-top: 4px; text-decoration: none; }
+.modal-close {
+  display: block;
+  margin: 16px auto 0;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-size: 12px;
+  cursor: pointer;
+}
+.modal-close:hover { color: var(--ink-dim); }

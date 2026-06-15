@@ -1,8 +1,6 @@
-import { auth } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
+import StudioClient from './StudioClient';
 
-// Einstieg: eingeloggt -> Studio, sonst -> Registrieren.
+// Startseite = Studio (öffentlich). Einstellen & Vorschau frei; Rendern gated.
 export default function Home() {
-  const { userId } = auth();
-  redirect(userId ? '/studio' : '/sign-up');
+  return <StudioClient />;
 }

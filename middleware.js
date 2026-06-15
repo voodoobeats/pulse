@@ -1,14 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
-// Login-Pflicht für Studio und Pricing. Nicht eingeloggte Nutzer werden
-// automatisch auf /sign-in geschickt.
-const isProtectedRoute = createRouteMatcher(['/studio(.*)', '/pricing(.*)']);
-
-export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) {
-    auth().protect();
-  }
-});
+// Stellt nur Clerks Auth-Kontext bereit. Keine Route ist gesperrt — alles ist
+// offen; gerendert werden darf nur mit Login + Premium (im Studio geprüft).
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

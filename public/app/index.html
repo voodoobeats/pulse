@@ -3976,9 +3976,33 @@ async function startRenderShorts() {
   }
 }
 
+// ---- Render gate ----------------------------------------------------------
+// When embedded in the website (iframe), don't start a render directly: ask the
+// parent page first (it checks login + premium). Standalone, render normally.
+let __pendingRenderKind = null;
+function requestRender(kind) {
+  if (window.parent && window.parent !== window) {
+    __pendingRenderKind = kind;
+    window.parent.postMessage({ type: 'render-request', kind: kind }, '*');
+  } else {
+    __doRender(kind);
+  }
+}
+function __doRender(kind) {
+  if (kind === 'shorts') startRenderShorts();
+  else startRender();
+}
+window.addEventListener('message', function (e) {
+  const d = e.data || {};
+  if (d.type === 'render-approved') {
+    __doRender(d.kind || __pendingRenderKind);
+    __pendingRenderKind = null;
+  }
+});
+
 $('addShortBtn').addEventListener('click', addShort);
 $('autoShortBtn').addEventListener('click', autoPickShorts);
-$('renderShortsBtn').addEventListener('click', startRenderShorts);
+$('renderShortsBtn').addEventListener('click', () => requestRender('shorts'));
 renderShortsUI();
 
 // ---------- Waveform draw
@@ -4023,7 +4047,7 @@ window.addEventListener('resize', () => { if (state.audioBuffer) drawWaveform();
 // muxed to MP4 via mp4-muxer. Much faster than ffmpeg.wasm.
 // ============================================================
 
-$('renderBtn').addEventListener('click', startRender);
+$('renderBtn').addEventListener('click', () => requestRender('main'));
 $('cancelBtn').addEventListener('click', () => {
   state.cancelRender = true;
 });

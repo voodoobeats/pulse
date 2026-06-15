@@ -1,12 +1,6 @@
-export const metadata = { title: 'Studio — Voodoo Visualizer' };
+import { redirect } from 'next/navigation';
 
-export default function StudioPage() {
-  return (
-    <iframe
-      src="/app/index.html"
-      title="Voodoo Visualizer"
-      className="studio-frame"
-      allow="autoplay; clipboard-write; fullscreen"
-    />
-  );
+// /studio existiert weiter, leitet aber auf die Startseite (= Studio).
+export default function StudioRedirect() {
+  redirect('/');
 }

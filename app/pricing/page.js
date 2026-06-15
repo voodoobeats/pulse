@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { fbTrack } from '../fbpixel';
 
 const MONTHLY = '9.99';
 const YEARLY_PER_MONTH = '7.99';
@@ -24,8 +25,20 @@ export default function PricingPage() {
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('success')) setBanner('success');
-    else if (p.get('canceled')) setBanner('canceled');
+    if (p.get('success')) {
+      setBanner('success');
+      // Meta Pixel Purchase — once per checkout session
+      const sid = p.get('session_id');
+      const plan = p.get('plan');
+      const key = 'fb_purchase_' + (sid || 'session');
+      if (!localStorage.getItem(key)) {
+        const value = plan === 'yearly' ? parseFloat(YEARLY_TOTAL) : parseFloat(MONTHLY);
+        fbTrack('Purchase', { value, currency: 'EUR' });
+        if (sid) localStorage.setItem(key, '1');
+      }
+    } else if (p.get('canceled')) {
+      setBanner('canceled');
+    }
   }, []);
 
   // Reflect the current Clerk status — avoids a stale "Manage subscription"

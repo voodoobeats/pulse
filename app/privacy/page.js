@@ -55,10 +55,11 @@ export default function PrivacyPage() {
 
       <h2>6. Cookies</h2>
       <p>
-        We use only cookies and comparable storage that are strictly necessary for the Service to
-        function &mdash; in particular session cookies set by Clerk to keep you signed in. We do not
-        use advertising or cross-site tracking cookies. Strictly necessary cookies do not require
-        consent (§ 25 (2) TDDDG).
+        We use cookies and comparable storage that are strictly necessary for the Service to
+        function &mdash; in particular session cookies set by Clerk to keep you signed in. Strictly
+        necessary cookies do not require consent (§ 25 (2) TDDDG). In addition, where you have given
+        consent, we use marketing cookies for advertising measurement via the Meta Pixel (see
+        section 8). You can withdraw your consent at any time with effect for the future.
       </p>
 
       <h2>7. Processors &amp; transfers to third countries</h2>
@@ -70,7 +71,19 @@ export default function PrivacyPage() {
         Framework.
       </p>
 
-      <h2>8. Retention</h2>
+      <h2>8. Advertising &amp; Meta Pixel</h2>
+      <p>
+        We use the Meta Pixel, a tool provided by Meta Platforms Ireland Ltd. The pixel uses
+        cookies and similar technologies to measure the effectiveness of our advertising (e.g.
+        page views, sign-ups and purchases) and to show relevant ads on Meta services such as
+        Facebook and Instagram. This may involve transferring data to Meta, including to the USA
+        under appropriate safeguards. Where consent is required, we process this data only on the
+        basis of your consent (Art. 6 (1)(a) GDPR, § 25 (1) TDDDG), which you may withdraw at any
+        time with effect for the future. You can also adjust your ad preferences in your Meta
+        account settings.
+      </p>
+
+      <h2>9. Retention</h2>
       <p>
         We keep account and subscription data for as long as your account exists and as required to
         fulfil the contract. Billing records are retained for the statutory periods (generally up to
@@ -78,7 +91,7 @@ export default function PrivacyPage() {
         data is deleted or anonymised unless we are legally required to retain it.
       </p>
 
-      <h2>9. Your rights</h2>
+      <h2>10. Your rights</h2>
       <p>Under the GDPR you have the right to:</p>
       <ul>
         <li>access your personal data (Art. 15)</li>
@@ -90,7 +103,7 @@ export default function PrivacyPage() {
       </ul>
       <p>To exercise any of these rights, contact us at the address above.</p>
 
-      <h2>10. Right to complain</h2>
+      <h2>11. Right to complain</h2>
       <p>
         You have the right to lodge a complaint with a supervisory authority. The authority
         responsible for us is the Hamburg Commissioner for Data Protection and Freedom of Information

@@ -35,7 +35,7 @@ export async function POST(req) {
       customer_email: email,
       subscription_data: { metadata: { clerkUserId: userId } },
       allow_promotion_codes: true,
-      success_url: `${origin}/pricing?success=1`,
+      success_url: `${origin}/pricing?success=1&plan=${interval}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing?canceled=1`,
     });
     return Response.json({ url: session.url });

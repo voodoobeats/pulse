@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
+import MetaPixel from './MetaPixel';
 import './globals.css';
 
 export const metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <body>
+          <MetaPixel />
           <SiteHeader />
           <main className="main">{children}</main>
           <SiteFooter />

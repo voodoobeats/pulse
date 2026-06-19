@@ -1098,6 +1098,17 @@
     width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2);
     background: var(--panel); color: var(--ink); font-size: 12px;
   }
+  .fx-posbtn {
+    width: 100%; margin-top: 10px; padding: 9px 10px; border-radius: 8px;
+    border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-dim);
+    cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.12s ease;
+  }
+  .fx-posbtn:hover { border-color: var(--accent); color: var(--ink); }
+  .fx-posbtn.active {
+    border-color: var(--accent-2); color: var(--accent-2);
+    box-shadow: 0 0 0 1px var(--accent-2) inset;
+  }
+  canvas#previewCanvas.flare-placing { cursor: crosshair; }
 </style>
 </head>
 <body>
@@ -1327,6 +1338,9 @@
                 <option value="right">Right</option>
               </select>
             </div>
+            <div class="field"><label>Particle Amount <span class="v" id="partAmountV">24</span></label><input type="range" id="partAmount" min="4" max="80" value="24" /></div>
+            <div class="field"><label>Particle Size <span class="v" id="partSizeV">100%</span></label><input type="range" id="partSize" min="20" max="300" value="100" /></div>
+            <div class="field"><label>Glow Strength <span class="v" id="partGlowV">100%</span></label><input type="range" id="partGlow" min="0" max="250" value="100" /></div>
             <div class="color-row">
               <label class="cb"><input type="checkbox" id="cbBg_particles" checked> Use Background Color</label>
               <input type="color" id="col_particles" value="#ff8c3c" disabled>
@@ -1381,6 +1395,48 @@
           </div>
         </div>
 
+        <div class="effect-card" data-effect="flare1" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Optical Flare 1</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgFlare1" hidden>
+            <div class="field"><label>Orientation</label>
+              <select id="flare1Orient" class="fx-select">
+                <option value="horizontal" selected>Horizontal streak</option>
+                <option value="vertical">Vertical streak</option>
+              </select>
+            </div>
+            <div class="field"><label>Intensity <span class="v" id="flare1IntV">100%</span></label><input type="range" id="flare1Int" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Size <span class="v" id="flare1SizeV">100%</span></label><input type="range" id="flare1Size" min="20" max="200" value="100" /></div>
+            <button type="button" class="fx-posbtn" id="btnPos_flare1">⊕ Set position — drag on preview</button>
+            <label class="cb" style="margin-top:10px"><input type="checkbox" id="cbBounce_flare1" checked> Bounce relative to center</label>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_flare1"> Use Background Color</label>
+              <input type="color" id="col_flare1" value="#7fc8ff">
+            </div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="flare2" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Optical Flare 2</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgFlare2" hidden>
+            <div class="field"><label>Orientation</label>
+              <select id="flare2Orient" class="fx-select">
+                <option value="horizontal">Horizontal streak</option>
+                <option value="vertical" selected>Vertical streak</option>
+              </select>
+            </div>
+            <div class="field"><label>Intensity <span class="v" id="flare2IntV">100%</span></label><input type="range" id="flare2Int" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Size <span class="v" id="flare2SizeV">100%</span></label><input type="range" id="flare2Size" min="20" max="200" value="100" /></div>
+            <button type="button" class="fx-posbtn" id="btnPos_flare2">⊕ Set position — drag on preview</button>
+            <label class="cb" style="margin-top:10px"><input type="checkbox" id="cbBounce_flare2" checked> Bounce relative to center</label>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="cbBg_flare2"> Use Background Color</label>
+              <input type="color" id="col_flare2" value="#7fc8ff">
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="fx-add-wrap">
@@ -1419,14 +1475,6 @@
       <div class="field">
         <label>Quality (CRF) <span class="v" id="crfV">23</span></label>
         <input type="range" id="crf" min="18" max="30" value="23" />
-      </div>
-      <div class="field">
-        <div class="toggles">
-          <label><input type="checkbox" id="forceOffline"><span>Force offline renderer</span></label>
-        </div>
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">
-          Only use the frame-exact WebCodecs engine (background-safe, no FPS loss when the tab is hidden). Fails with an error if your browser can't run it, instead of silently falling back to real-time capture.
-        </div>
       </div>
 
       <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
@@ -1756,7 +1804,18 @@ const effectColors = {
   spectrum:  { useBg: true, rgb: [255, 140, 60] },
   ambient:   { useBg: true, rgb: [255, 140, 60] },
   logoglow:  { useBg: true, rgb: [255, 255, 255] }, // useBg === "use logo color"
+  flare1:    { useBg: false, rgb: [127, 200, 255] },
+  flare2:    { useBg: false, rgb: [127, 200, 255] },
 };
+
+// Optical flare positions (normalized 0..1 of the frame). Independent of
+// resolution so preview and render match. `flarePlacing` holds the id of the
+// flare currently being positioned by dragging on the preview ('' = none).
+const flarePos = {
+  flare1: { x: 0.5, y: 0.5 },
+  flare2: { x: 0.5, y: 0.5 },
+};
+let flarePlacing = '';
 
 function hexToRgb(hex) {
   const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
@@ -1805,6 +1864,8 @@ async function analyzeLogoPalette(img) {
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
+  'partAmount', 'partSize', 'partGlow',
+  'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
@@ -1813,7 +1874,7 @@ async function analyzeLogoPalette(img) {
     if (id === 'crf') display.textContent = v;
     else if (id === 'shockReset') display.textContent = (v / 10).toFixed(1) + 's';
     else if (id === 'specFStart' || id === 'specFEnd') display.textContent = v + ' Hz';
-    else if (id === 'specBands') display.textContent = v;
+    else if (id === 'specBands' || id === 'partAmount') display.textContent = v;
     else if (id === 'specDur' || id === 'specOff') display.textContent = v + ' ms';
     else if (id === 'shortFadeIn' || id === 'shortFadeOut') display.textContent = parseFloat(v).toFixed(1) + ' s';
     else display.textContent = v + '%';
@@ -1832,7 +1893,8 @@ async function analyzeLogoPalette(img) {
 });
 
 // Toggle checkboxes — redraw preview on change
-['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow'].forEach(id => {
+['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
+ 'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -1842,8 +1904,8 @@ async function analyzeLogoPalette(img) {
   });
 });
 
-// Particle origin / direction selects — redraw on change
-['partOrigin', 'partDirection'].forEach(id => {
+// Particle origin / direction + flare orientation selects — redraw on change
+['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -1865,6 +1927,8 @@ const COLOR_ROWS = [
   { fx: 'spectrum',  cb: 'cbBg_spectrum',  col: 'col_spectrum' },
   { fx: 'ambient',   cb: 'cbBg_ambient',   col: 'col_ambient' },
   { fx: 'logoglow',  cb: 'cbLogoColor',    col: 'col_logoglow' },
+  { fx: 'flare1',    cb: 'cbBg_flare1',    col: 'col_flare1' },
+  { fx: 'flare2',    cb: 'cbBg_flare2',    col: 'col_flare2' },
 ];
 
 function syncColorState(row) {
@@ -1903,12 +1967,15 @@ const FX_TOGGLES = {
   spectrum:  ['tgSpecTop', 'tgSpecBot'],
   grain:     ['tgGrain'],
   ambient:   ['tgAmbient'],
+  flare1:    ['tgFlare1'],
+  flare2:    ['tgFlare2'],
 };
 const FX_TITLES = {
   glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
+  flare1: 'Optical Flare 1', flare2: 'Optical Flare 2',
 };
-const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient'];
+const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2'];
 
 function fxCard(fx) { return document.querySelector('.effect-card[data-effect="' + fx + '"]'); }
 function fxIsAdded(fx) {
@@ -1934,6 +2001,8 @@ function removeEffect(fx) {
   if (!card) return;
   card.style.display = 'none';
   setToggles(fx, false);
+  // If this flare was being positioned, stop the picker.
+  if (flarePlacing === fx && typeof setFlarePlacing === 'function') setFlarePlacing(fx);
   rebuildAddMenu();
   redrawPreviewSafe();
 }
@@ -2683,6 +2752,9 @@ function drawFrame(ctx, w, h, time, bass) {
   const logoGlowSize= parseFloat($('logoGlowSize').value) / 100;
   const partOrigin  = $('partOrigin').value;
   const partDirection = $('partDirection').value;
+  const partAmount  = parseInt($('partAmount').value);
+  const partSize    = parseFloat($('partSize').value) / 100;
+  const partGlow    = parseFloat($('partGlow').value) / 100;
   const grainAmt    = parseFloat($('grainAmt').value) / 100;
 
   // ==========================================================
@@ -2779,7 +2851,28 @@ function drawFrame(ctx, w, h, time, bass) {
 
   // ========== LAYER 4: Bass-hit particle bursts (from center — share no shake for punch) ==========
   if (tgParticles) {
-    drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection);
+    drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection, partAmount, partSize, partGlow);
+  }
+
+  // ========== LAYER 4a: Optical flares (up to 2 — beat-reactive lens flares) ==========
+  const flarePunch = state.logoImg ? (1.0 + bassAdj * logoBounce * 0.43) : 1.0;
+  if ($('tgFlare1') && $('tgFlare1').checked) {
+    drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare1'), {
+      orientation: $('flare1Orient').value,
+      intensity: parseFloat($('flare1Int').value) / 100,
+      size: parseFloat($('flare1Size').value) / 100,
+      bounce: $('cbBounce_flare1').checked,
+      x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch,
+    });
+  }
+  if ($('tgFlare2') && $('tgFlare2').checked) {
+    drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare2'), {
+      orientation: $('flare2Orient').value,
+      intensity: parseFloat($('flare2Int').value) / 100,
+      size: parseFloat($('flare2Size').value) / 100,
+      bounce: $('cbBounce_flare2').checked,
+      x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch,
+    });
   }
 
   // ========== LAYER 4b: Audio spectrum (top + bottom can be toggled independently) ==========
@@ -3101,6 +3194,127 @@ function drawLensFlare(ctx, cx, cy, w, h, time, bass, effectsAmt, color, logoSiz
 }
 
 // ============================================================
+// OPTICAL FLARE — positionable anamorphic lens flare (horizontal or vertical)
+// Brightness pulses on the beat (bassAdj). Position is a normalized point that
+// can optionally "bounce relative to center": its offset from the frame center
+// scales with the logo's punch, so the flare tracks the logo as it grows.
+// o = { orientation, intensity, size, bounce, x, y, punchScale }
+// ============================================================
+function drawOpticalFlare(ctx, w, h, time, bassAdj, color, o) {
+  color = color || bgPalette.accent;
+  const baseInt = (o.intensity == null || isNaN(o.intensity)) ? 1 : o.intensity; // 0..2
+  const sizeMul = (o.size == null || isNaN(o.size)) ? 1 : o.size;                // 0.2..2
+  // Always-visible base + strong pulse on bass hits, scaled by the slider.
+  const intensity = Math.min(1.5, (0.16 + bassAdj * 0.95) * baseInt);
+  if (intensity < 0.02) return;
+
+  const cx = w / 2, cy = h / 2;
+  let px = o.x * w, py = o.y * h;
+  if (o.bounce && o.punchScale) {
+    px = cx + (px - cx) * o.punchScale;
+    py = cy + (py - cy) * o.punchScale;
+  }
+  const vertical = (o.orientation === 'vertical');
+  const minWH = Math.min(w, h);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+
+  // --- 1. Bright core at the flare position ---
+  const coreR = minWH * 0.09 * sizeMul * (0.8 + bassAdj * 0.6);
+  const coreAlpha = intensity * 0.6;
+  const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, coreR);
+  coreGrad.addColorStop(0,    rgba([255, 255, 255], coreAlpha));
+  coreGrad.addColorStop(0.25, rgba(color, coreAlpha * 0.8));
+  coreGrad.addColorStop(1,    rgba(color, 0));
+  ctx.fillStyle = coreGrad;
+  ctx.fillRect(px - coreR, py - coreR, coreR * 2, coreR * 2);
+
+  // --- 2. Anamorphic streak (horizontal or vertical through the position) ---
+  const streakLen = (vertical ? h : w) * (0.95 + bassAdj * 0.18) * sizeMul;
+  const streakThick = Math.max(2, minWH * 0.012 * sizeMul * (0.7 + bassAdj * 0.6));
+  const streakAlpha = intensity * 0.55;
+  const gx0 = vertical ? px : px - streakLen / 2;
+  const gy0 = vertical ? py - streakLen / 2 : py;
+  const gx1 = vertical ? px : px + streakLen / 2;
+  const gy1 = vertical ? py + streakLen / 2 : py;
+  const streakGrad = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+  streakGrad.addColorStop(0,    rgba(color, 0));
+  streakGrad.addColorStop(0.35, rgba(color, streakAlpha * 0.5));
+  streakGrad.addColorStop(0.5,  rgba([255, 255, 255], streakAlpha));
+  streakGrad.addColorStop(0.65, rgba(color, streakAlpha * 0.5));
+  streakGrad.addColorStop(1,    rgba(color, 0));
+  ctx.fillStyle = streakGrad;
+  if (vertical) ctx.fillRect(px - streakThick / 2, py - streakLen / 2, streakThick, streakLen);
+  else          ctx.fillRect(px - streakLen / 2, py - streakThick / 2, streakLen, streakThick);
+
+  // Thinner inner hot line
+  const thick2 = Math.max(1, streakThick * 0.35);
+  const len2 = streakLen * 0.6;
+  const i0x = vertical ? px : px - len2 / 2;
+  const i0y = vertical ? py - len2 / 2 : py;
+  const i1x = vertical ? px : px + len2 / 2;
+  const i1y = vertical ? py + len2 / 2 : py;
+  const innerGrad = ctx.createLinearGradient(i0x, i0y, i1x, i1y);
+  innerGrad.addColorStop(0,   rgba([255, 255, 255], 0));
+  innerGrad.addColorStop(0.5, rgba([255, 255, 255], intensity * 0.85));
+  innerGrad.addColorStop(1,   rgba([255, 255, 255], 0));
+  ctx.fillStyle = innerGrad;
+  if (vertical) ctx.fillRect(px - thick2 / 2, py - len2 / 2, thick2, len2);
+  else          ctx.fillRect(px - len2 / 2, py - thick2 / 2, len2, thick2);
+
+  // --- 3. Ghost chain along the axis from the flare toward frame center ---
+  const ghosts = [
+    { t: -0.5, r: 0.030, alpha: 0.22, tint: 0.4 },
+    { t:  0.45, r: 0.045, alpha: 0.26, tint: 0.85 },
+    { t:  0.8,  r: 0.060, alpha: 0.18, tint: 1.0 },
+  ];
+  const dirx = cx - px, diry = cy - py;
+  for (const g of ghosts) {
+    const ggx = px + dirx * g.t;
+    const ggy = py + diry * g.t;
+    const gr = h * g.r * sizeMul * (0.9 + bassAdj * 0.3);
+    const ga = intensity * g.alpha;
+    if (ga < 0.01) continue;
+    const tintR = Math.round(255 * (1 - g.tint) + color[0] * g.tint);
+    const tintG = Math.round(255 * (1 - g.tint) + color[1] * g.tint);
+    const tintB = Math.round(255 * (1 - g.tint) + color[2] * g.tint);
+    const grad = ctx.createRadialGradient(ggx, ggy, 0, ggx, ggy, gr);
+    grad.addColorStop(0,   `rgba(${tintR},${tintG},${tintB},${ga})`);
+    grad.addColorStop(0.5, `rgba(${tintR},${tintG},${tintB},${ga * 0.4})`);
+    grad.addColorStop(1,   `rgba(${tintR},${tintG},${tintB},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(ggx - gr, ggy - gr, gr * 2, gr * 2);
+  }
+
+  // --- 4. Aperture star on strong bass ---
+  if (bassAdj > 0.4) {
+    const starBase = (bassAdj - 0.4) / 0.6;
+    const spokes = 6;
+    const spokeLen = minWH * 0.5 * sizeMul * starBase;
+    const spokeW = h * 0.004 * (0.7 + bassAdj * 0.4);
+    const spokeAlpha = intensity * starBase * 0.55;
+    ctx.save();
+    ctx.translate(px, py);
+    for (let s = 0; s < spokes; s++) {
+      ctx.save();
+      ctx.rotate((s / spokes) * Math.PI * 2 + time * 0.04);
+      const grad = ctx.createLinearGradient(0, 0, spokeLen, 0);
+      grad.addColorStop(0, rgba([255, 255, 255], spokeAlpha));
+      grad.addColorStop(0.2, rgba(color, spokeAlpha * 0.6));
+      grad.addColorStop(1, rgba(color, 0));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, -spokeW / 2, spokeLen, spokeW);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+}
+
+// ============================================================
 // AUDIO SPECTRUM — After-Effects-faithful
 // Linear frequency bands, each reading only its own bin energy, meaned over
 // the Audio Duration window (= AE "Duration Averaging"). No bass coupling,
@@ -3403,15 +3617,17 @@ function drawLogoGlow(ctx, cx, cy, logoW, logoH, color, intensity, size, bassAdj
   ctx.restore();
 }
 
-function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction) {
+function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction, amount, sizeMul, glowMul) {
   if (effectsAmt < 0.01 || !onsets || onsets.length === 0) return;
 
   color = color || bgPalette.accent;
   origin = origin || 'middle';
   direction = direction || 'center';
+  sizeMul = (sizeMul == null || isNaN(sizeMul)) ? 1 : sizeMul;
+  glowMul = (glowMul == null || isNaN(glowMul)) ? 1 : glowMul;
 
   const lifetime = 1.2; // seconds
-  const particlesPerBurst = 24;
+  const particlesPerBurst = (amount && !isNaN(amount)) ? Math.max(1, Math.round(amount)) : 24;
   const cx = w / 2;
   const cy = h / 2;
   const radialDefault = (origin === 'middle' && direction === 'center');
@@ -3469,7 +3685,7 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
       const gravity = (rng() - 0.5) * 30; // slight drift
       const px = sx + Math.cos(angle) * speed * age + gravity * age * age;
       const py = sy + Math.sin(angle) * speed * age;
-      const size = (1.5 + rng() * 3) * effectsAmt * (0.5 + strength);
+      const size = (1.5 + rng() * 3) * effectsAmt * (0.5 + strength) * sizeMul;
 
       if (px < -50 || px > w + 50 || py < -50 || py > h + 50) continue;
 
@@ -3479,12 +3695,15 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
       ctx.arc(px, py, size, 0, Math.PI * 2);
       ctx.fill();
 
-      // Soft halo
-      const haloGrad = ctx.createRadialGradient(px, py, 0, px, py, size * 4);
-      haloGrad.addColorStop(0, rgba(color, fade * 0.4));
-      haloGrad.addColorStop(1, rgba(color, 0));
-      ctx.fillStyle = haloGrad;
-      ctx.fillRect(px - size * 4, py - size * 4, size * 8, size * 8);
+      // Soft halo — radius and brightness scale with Glow Strength
+      if (glowMul > 0.001) {
+        const haloR = size * (2 + 2 * glowMul);
+        const haloGrad = ctx.createRadialGradient(px, py, 0, px, py, haloR);
+        haloGrad.addColorStop(0, rgba(color, fade * 0.4 * glowMul));
+        haloGrad.addColorStop(1, rgba(color, 0));
+        ctx.fillStyle = haloGrad;
+        ctx.fillRect(px - haloR, py - haloR, haloR * 2, haloR * 2);
+      }
     }
   }
 
@@ -3709,6 +3928,30 @@ resizePreview();
 function drawPreviewFrame(time, bass) {
   drawFrame(previewCtx, previewCanvas.width, previewCanvas.height, time, bass);
   drawShortGuide();
+  drawFlarePlacingGuide();
+}
+
+// Crosshair shown on the preview while positioning an optical flare by drag.
+function drawFlarePlacingGuide() {
+  if (!flarePlacing || !flarePos[flarePlacing]) return;
+  const ctx = previewCtx;
+  const w = previewCanvas.width, h = previewCanvas.height;
+  const px = flarePos[flarePlacing].x * w, py = flarePos[flarePlacing].y * h;
+  const r = Math.max(10, h * 0.04);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(95,201,231,0.95)';
+  ctx.fillStyle = 'rgba(95,201,231,0.95)';
+  ctx.lineWidth = Math.max(1.5, h * 0.004);
+  ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(px - r * 1.5, py); ctx.lineTo(px + r * 1.5, py);
+  ctx.moveTo(px, py - r * 1.5); ctx.lineTo(px, py + r * 1.5);
+  ctx.stroke();
+  const fs = Math.max(9, Math.round(h * 0.025));
+  ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(flarePlacing === 'flare1' ? 'FLARE 1' : 'FLARE 2', px, py - r * 1.6);
+  ctx.restore();
 }
 
 // 9:16 safe-area guide — shows where a vertical short crops the centered frame
@@ -3937,6 +4180,55 @@ fxMarker.addEventListener('mousedown', startMarkerDrag);
 fxMarker.addEventListener('touchstart', startMarkerDrag, { passive: false });
 fxMarkerHit.addEventListener('mousedown', startMarkerDrag);
 fxMarkerHit.addEventListener('touchstart', startMarkerDrag, { passive: false });
+
+// ============================================================
+// OPTICAL FLARE POSITION PICKER
+// Toggle a flare's "Set position" button, then click/drag anywhere on the
+// preview to move that flare. Position is stored normalized (0..1).
+// ============================================================
+function setFlarePlacing(id) {
+  flarePlacing = (flarePlacing === id) ? '' : id;
+  ['flare1', 'flare2'].forEach(f => {
+    const b = $('btnPos_' + f);
+    if (b) b.classList.toggle('active', flarePlacing === f);
+  });
+  previewCanvas.classList.toggle('flare-placing', !!flarePlacing);
+  if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
+}
+['flare1', 'flare2'].forEach(id => {
+  const b = $('btnPos_' + id);
+  if (b) b.addEventListener('click', () => setFlarePlacing(id));
+});
+
+let flareDragging = false;
+function flarePointerToPos(e) {
+  if (!flarePlacing || !flarePos[flarePlacing]) return;
+  const rect = previewCanvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  flarePos[flarePlacing].x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  flarePos[flarePlacing].y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+  drawPreviewFrame(getCurrentTime(), getCurrentBass());
+  autosaveDebounced();
+}
+previewCanvas.addEventListener('mousedown', (e) => {
+  if (!flarePlacing) return;
+  e.preventDefault();
+  flareDragging = true;
+  flarePointerToPos(e);
+});
+window.addEventListener('mousemove', (e) => { if (flareDragging) flarePointerToPos(e); });
+window.addEventListener('mouseup', () => { flareDragging = false; });
+previewCanvas.addEventListener('touchstart', (e) => {
+  if (!flarePlacing) return;
+  e.preventDefault();
+  flareDragging = true;
+  flarePointerToPos(e);
+}, { passive: false });
+previewCanvas.addEventListener('touchmove', (e) => {
+  if (flareDragging) { e.preventDefault(); flarePointerToPos(e); }
+}, { passive: false });
+window.addEventListener('touchend', () => { flareDragging = false; });
 
 // ============================================================
 // SHORTS — up to 3 vertical (9:16) clips defined as blue ranges on the
@@ -4501,6 +4793,76 @@ async function ensureMp4MuxerLoaded() {
   throw new Error('mp4-muxer could not be loaded from any CDN');
 }
 
+// Generic "inject a <script> and wait for a global" helper used by the lazy
+// loaders below. Tries each CDN in turn; resolves once `globalName` exists.
+async function loadScriptForGlobal(globalName, cdns) {
+  if (typeof window[globalName] !== 'undefined') return window[globalName];
+  for (const url of cdns) {
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('script load failed: ' + url));
+        document.head.appendChild(s);
+        setTimeout(() => reject(new Error('script load timeout: ' + url)), 15000);
+      });
+      if (typeof window[globalName] !== 'undefined') return window[globalName];
+    } catch (e) {
+      console.warn('CDN failed:', url, e.message);
+    }
+  }
+  throw new Error(globalName + ' could not be loaded from any CDN');
+}
+
+// Lazy-load webm-muxer (global: WebMMuxer) for the offline WebM intermediate.
+async function ensureWebmMuxerLoaded() {
+  return loadScriptForGlobal('WebMMuxer', [
+    'https://cdn.jsdelivr.net/npm/webm-muxer@5.0.3/build/webm-muxer.min.js',
+    'https://unpkg.com/webm-muxer@5.0.3/build/webm-muxer.min.js',
+    'https://cdn.jsdelivr.net/npm/webm-muxer@5/build/webm-muxer.min.js',
+  ]);
+}
+
+// Lazy-load ffmpeg.wasm (UMD globals: FFmpegWASM + FFmpegUtil), single-thread
+// core so we don't need cross-origin isolation (SharedArrayBuffer) headers.
+let _ffmpegInstance = null;
+async function ensureFfmpegLoaded(onProgress) {
+  if (_ffmpegInstance) return _ffmpegInstance;
+  await loadScriptForGlobal('FFmpegWASM', [
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js',
+    'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js',
+  ]);
+  await loadScriptForGlobal('FFmpegUtil', [
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js',
+    'https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js',
+  ]);
+  const { FFmpeg } = window.FFmpegWASM;
+  const { toBlobURL } = window.FFmpegUtil;
+  // Core hosted on CDN; toBlobURL makes same-origin blob URLs so the internal
+  // worker can load them without cross-origin restrictions.
+  const coreBases = [
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd',
+    'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd',
+  ];
+  const ff = new FFmpeg();
+  if (onProgress) ff.on('progress', ({ progress }) => onProgress(progress));
+  let lastErr = null;
+  for (const base of coreBases) {
+    try {
+      const coreURL = await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript');
+      const wasmURL = await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm');
+      await ff.load({ coreURL, wasmURL });
+      _ffmpegInstance = ff;
+      return ff;
+    } catch (e) {
+      lastErr = e;
+      console.warn('ffmpeg core load failed from', base, e && e.message);
+    }
+  }
+  throw new Error('ffmpeg.wasm core could not be loaded: ' + (lastErr && lastErr.message));
+}
+
 // ============================================================
 // BACKGROUND-SAFE CLOCK
 // Browsers throttle setTimeout and pause requestAnimationFrame in hidden tabs,
@@ -4749,6 +5111,209 @@ async function renderWithMp4Muxer(opts) {
 }
 
 // ============================================================
+// RENDERER 1b: WebCodecs + webm-muxer (offline), then ffmpeg.wasm → MP4
+// Frame-exact offline encode to VP9 + Opus WebM (works where MP4/AAC encoding
+// isn't available, e.g. Firefox), then a true H.264/AAC MP4 transcode. Because
+// the source is frame-exact, the MP4 is smooth — no dropped-frame lag.
+// ============================================================
+async function renderWithWebmMuxer(opts) {
+  const { W, H, fps, totalFrames, videoBitrate, renderCanvas, renderCtx, previewC_ctx, duration } = opts;
+  const videoStartTime = opts.videoStartTime || 0;
+  const audioBuffer = opts.audioBuffer || state.audioBuffer;
+  const phasePrefix = opts.shortLabel ? opts.shortLabel + ' · ' : '';
+
+  const WM = await ensureWebmMuxerLoaded();
+
+  if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') {
+    throw new Error('WebCodecs APIs not available in this browser');
+  }
+
+  // Pick a supported VP codec (VP9 preferred, VP8 fallback).
+  let videoCodec = 'vp09.00.10.08'; // VP9 profile 0, 8-bit
+  let videoProbe = await VideoEncoder.isConfigSupported({ codec: videoCodec, width: W, height: H, bitrate: videoBitrate, framerate: fps });
+  let muxVideoCodec = 'V_VP9';
+  if (!videoProbe.supported) {
+    videoCodec = 'vp8';
+    videoProbe = await VideoEncoder.isConfigSupported({ codec: videoCodec, width: W, height: H, bitrate: videoBitrate, framerate: fps });
+    muxVideoCodec = 'V_VP8';
+    if (!videoProbe.supported) throw new Error('No supported VP8/VP9 encoder');
+  }
+  const audioCodecCfg = { codec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: 192_000 };
+  const audioProbe = await AudioEncoder.isConfigSupported(audioCodecCfg);
+  if (!audioProbe.supported) throw new Error('Opus encoding not supported');
+
+  if (state.cancelRender) throw new Error('Cancelled');
+
+  const muxer = new WM.Muxer({
+    target: new WM.ArrayBufferTarget(),
+    video: { codec: muxVideoCodec, width: W, height: H, frameRate: fps },
+    audio: { codec: 'A_OPUS', numberOfChannels: 2, sampleRate: 48000 },
+    firstTimestampBehavior: 'offset',
+  });
+
+  let encoderError = null;
+  const videoEncoder = new VideoEncoder({
+    output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch (e) { encoderError = encoderError || e; } },
+    error: (e) => { encoderError = encoderError || e; console.error('VideoEncoder error:', e); },
+  });
+  videoEncoder.configure({ codec: videoCodec, width: W, height: H, bitrate: videoBitrate, framerate: fps });
+
+  const audioEncoder = new AudioEncoder({
+    output: (chunk, meta) => { try { muxer.addAudioChunk(chunk, meta); } catch (e) { encoderError = encoderError || e; } },
+    error: (e) => { encoderError = encoderError || e; console.error('AudioEncoder error:', e); },
+  });
+  audioEncoder.configure(audioCodecCfg);
+
+  try {
+    $('renderPhase').textContent = phasePrefix + 'Rendering frames (offline)…';
+    const startWall = performance.now();
+    let lastUiUpdate = 0;
+    keysFillSmoothedTime = -1;
+    specBarLastTime = -1;
+    const microsPerFrame = 1_000_000 / fps;
+
+    for (let f = 0; f < totalFrames; f++) {
+      if (state.cancelRender) throw new Error('Cancelled');
+      const t = videoStartTime + f / fps;
+      drawFrame(renderCtx, W, H, t, 0);
+      const keyFrame = (f % (fps * 2)) === 0;
+      const frame = new VideoFrame(renderCanvas, {
+        timestamp: Math.round(f * microsPerFrame),
+        duration: Math.round(microsPerFrame),
+      });
+      videoEncoder.encode(frame, { keyFrame });
+      frame.close();
+
+      if (videoEncoder.encodeQueueSize > 30) {
+        while (videoEncoder.encodeQueueSize > 8) {
+          await bgTimeout(5);
+          if (state.cancelRender) throw new Error('Cancelled');
+        }
+      }
+
+      const now = performance.now();
+      if (now - lastUiUpdate > 100 || f === totalFrames - 1) {
+        lastUiUpdate = now;
+        const pct = (f + 1) / totalFrames;
+        $('renderBar').style.width = (pct * 50) + '%';
+        $('frameCount').textContent = (f + 1) + ' / ' + totalFrames;
+        const elapsed = (now - startWall) / 1000;
+        const rate = (f + 1) / elapsed;
+        $('renderFps').textContent = rate.toFixed(1);
+        previewC_ctx.drawImage(renderCanvas, 0, 0, previewC_ctx.canvas.width, previewC_ctx.canvas.height);
+        await bgTimeout(0);
+      }
+    }
+    if (state.cancelRender) throw new Error('Cancelled');
+
+    // Encode audio (Opus) — resample to 48k if needed
+    $('renderPhase').textContent = phasePrefix + 'Encoding audio…';
+    $('renderBar').style.width = '54%';
+    await bgTimeout(0);
+
+    const targetSr = 48000;
+    const chunkSec = 0.1;
+    const chunkSamples = Math.floor(targetSr * chunkSec);
+    const totalAudioSamples = Math.floor(duration * targetSr);
+    const needsResample = audioBuffer.sampleRate !== targetSr;
+    let leftCh, rightCh;
+    if (needsResample) {
+      const offline = new OfflineAudioContext(2, totalAudioSamples, targetSr);
+      const src = offline.createBufferSource();
+      src.buffer = audioBuffer;
+      src.connect(offline.destination);
+      src.start(0);
+      const resampled = await offline.startRendering();
+      leftCh = resampled.getChannelData(0);
+      rightCh = resampled.numberOfChannels > 1 ? resampled.getChannelData(1) : leftCh;
+    } else {
+      leftCh = audioBuffer.getChannelData(0);
+      rightCh = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : leftCh;
+    }
+
+    const totalChunks = Math.ceil(totalAudioSamples / chunkSamples);
+    for (let c = 0; c < totalChunks; c++) {
+      if (state.cancelRender) throw new Error('Cancelled');
+      const frameStart = c * chunkSamples;
+      const frameEnd = Math.min(totalAudioSamples, (c + 1) * chunkSamples);
+      const frameCount = frameEnd - frameStart;
+      if (frameCount <= 0) break;
+      const planar = new Float32Array(frameCount * 2);
+      planar.set(leftCh.subarray(frameStart, frameEnd), 0);
+      planar.set(rightCh.subarray(frameStart, frameEnd), frameCount);
+      const audioData = new AudioData({
+        format: 'f32-planar', sampleRate: targetSr, numberOfFrames: frameCount,
+        numberOfChannels: 2, timestamp: Math.round(frameStart / targetSr * 1_000_000), data: planar,
+      });
+      audioEncoder.encode(audioData);
+      audioData.close();
+      if (c % 20 === 0) {
+        $('renderBar').style.width = (54 + ((c + 1) / totalChunks) * 6) + '%';
+        await bgTimeout(0);
+      }
+    }
+
+    $('renderPhase').textContent = phasePrefix + 'Finalizing WebM…';
+    await videoEncoder.flush();
+    await audioEncoder.flush();
+    if (encoderError) throw encoderError;
+    muxer.finalize();
+    const { buffer } = muxer.target;
+    return new Blob([buffer], { type: 'video/webm' });
+  } finally {
+    try { videoEncoder.state !== 'closed' && videoEncoder.close(); } catch (e) {}
+    try { audioEncoder.state !== 'closed' && audioEncoder.close(); } catch (e) {}
+  }
+}
+
+// Transcode a (frame-exact) WebM blob to H.264/AAC MP4 via ffmpeg.wasm.
+async function transcodeWebmToMp4(webmBlob, opts) {
+  const phasePrefix = opts.shortLabel ? opts.shortLabel + ' · ' : '';
+  $('renderPhase').textContent = phasePrefix + 'Loading converter (one-time)…';
+  $('renderBar').style.width = '62%';
+  const ffmpeg = await ensureFfmpegLoaded((p) => {
+    const pct = Math.max(0, Math.min(1, p));
+    $('renderBar').style.width = (65 + pct * 33) + '%';
+    $('renderPhase').textContent = phasePrefix + 'Converting to MP4… ' + Math.round(pct * 100) + '%';
+  });
+
+  const inName = 'in.webm', outName = 'out.mp4';
+  const buf = new Uint8Array(await webmBlob.arrayBuffer());
+  await ffmpeg.writeFile(inName, buf);
+
+  const crf = parseInt($('crf').value);
+  $('renderPhase').textContent = phasePrefix + 'Converting to MP4…';
+  await ffmpeg.exec([
+    '-i', inName,
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(crf), '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-b:a', '192k',
+    '-movflags', '+faststart',
+    outName,
+  ]);
+  const data = await ffmpeg.readFile(outName);
+  try { await ffmpeg.deleteFile(inName); } catch (e) {}
+  try { await ffmpeg.deleteFile(outName); } catch (e) {}
+  // data is a Uint8Array
+  return new Blob([data.buffer || data], { type: 'video/mp4' });
+}
+
+async function renderWebmOfflineThenMp4(opts) {
+  const webmBlob = await renderWithWebmMuxer(opts);
+  if (state.cancelRender) throw new Error('Cancelled');
+  try {
+    const mp4Blob = await transcodeWebmToMp4(webmBlob, opts);
+    return { blob: mp4Blob, ext: 'mp4', mime: 'video/mp4' };
+  } catch (e) {
+    if (e && e.message === 'Cancelled') throw e;
+    // Converter failed (network/memory). Hand back the frame-exact WebM —
+    // still smooth, just a different container — rather than failing outright.
+    console.warn('MP4 transcode failed, returning smooth WebM instead:', e);
+    toast('MP4 conversion unavailable — saved a smooth WebM instead', 'error');
+    return { blob: webmBlob, ext: 'webm', mime: 'video/webm' };
+  }
+}
+
+// ============================================================
 // RENDERER 2: MediaRecorder real-time capture
 // Captures the canvas + audio in real-time. Slower (1× track length)
 // but works in nearly every browser without external libraries.
@@ -4902,15 +5467,21 @@ async function tryRenderers(opts) {
   // WebCodecs path first because it's much faster.
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  const webcodecs = { name: 'WebCodecs (offline)', safe: true,  fn: () => renderWithMp4Muxer(opts) };
+  const webcodecs = { name: 'WebCodecs MP4 (offline)', safe: true,  fn: () => renderWithMp4Muxer(opts) };
+  // Firefox can't emit MP4/AAC from WebCodecs or MediaRecorder, so its only
+  // option used to be laggy real-time WebM capture. Instead we encode a
+  // frame-exact offline WebM (VP9 + Opus) and transcode it to true MP4 with
+  // ffmpeg.wasm — smooth output, no dropped frames.
+  const webmOfflineMp4 = { name: 'WebCodecs WebM → MP4 (offline)', safe: true, fn: () => renderWebmOfflineThenMp4(opts) };
   const mrMp4    = { name: 'MediaRecorder MP4 (real-time)',  safe: false, fn: () => renderWithMediaRecorder(opts, 'mp4') };
   const mrWebm   = { name: 'MediaRecorder WebM (real-time)', safe: false, fn: () => renderWithMediaRecorder(opts, 'webm') };
 
-  // "Force offline" — only ever use the frame-exact, background-safe engine.
-  const forceOffline = !!($('forceOffline') && $('forceOffline').checked);
-  const renderers = forceOffline
-    ? [webcodecs]
-    : (isSafari ? [mrMp4, webcodecs, mrWebm] : [webcodecs, mrMp4, mrWebm]);
+  // Order: try the fast direct-MP4 path first; on browsers where it can't
+  // produce a valid MP4 (notably Firefox), fall to the offline WebM→MP4
+  // transcode (still frame-exact). Real-time capture stays as a last resort.
+  const renderers = isSafari
+    ? [mrMp4, webcodecs, webmOfflineMp4, mrWebm]
+    : [webcodecs, webmOfflineMp4, mrMp4, mrWebm];
 
   const info = $('renderRendererInfo');
   const failures = [];
@@ -4942,9 +5513,6 @@ async function tryRenderers(opts) {
       // Brief pause between attempts so the UI label updates visibly
       await new Promise(res => setTimeout(res, 200));
     }
-  }
-  if (forceOffline) {
-    throw new Error('Offline WebCodecs engine unavailable in this browser. Uncheck "Force offline renderer" to allow real-time capture (keep the tab focused).');
   }
   throw new Error('All renderers failed:\n' + failures.join('\n'));
 }
@@ -5408,10 +5976,12 @@ const PRESET_SLIDER_IDS = [
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
+  'partAmount', 'partSize', 'partGlow',
+  'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
 ];
 const PRESET_TEXT_IDS = ['topText', 'botText'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2'];
 
 function gatherEffects() {
   const colors = {};
@@ -5432,6 +6002,10 @@ function gatherPreset() {
     toggles: {},
     keys: { ...bassKeys },
     effects: gatherEffects(),
+    flares: {
+      flare1: { x: flarePos.flare1.x, y: flarePos.flare1.y, bounce: !!($('cbBounce_flare1') && $('cbBounce_flare1').checked) },
+      flare2: { x: flarePos.flare2.x, y: flarePos.flare2.y, bounce: !!($('cbBounce_flare2') && $('cbBounce_flare2').checked) },
+    },
   };
   PRESET_SLIDER_IDS.forEach(id => {
     const el = $(id);
@@ -5544,6 +6118,18 @@ function applyPreset(preset, silent) {
   // NOT read from presets. It stays exactly where you placed it, independent of
   // loading or resetting presets.
 
+  // Optical flare positions + bounce
+  if (preset.flares) {
+    ['flare1', 'flare2'].forEach(fid => {
+      const f = preset.flares[fid];
+      if (!f) return;
+      if (typeof f.x === 'number') flarePos[fid].x = Math.max(0, Math.min(1, f.x));
+      if (typeof f.y === 'number') flarePos[fid].y = Math.max(0, Math.min(1, f.y));
+      const cb = $('cbBounce_' + fid);
+      if (cb && typeof f.bounce === 'boolean') cb.checked = f.bounce;
+    });
+  }
+
   // Modular effects: which cards are active + per-effect colors
   applyEffects(preset.effects);
 
@@ -5606,17 +6192,21 @@ $('resetBtn').addEventListener('click', () => {
       shortFadeIn: '1', shortFadeOut: '3',
       glowBgInt: '100', glowBgSize: '100', logoGlowInt: '100', logoGlowSize: '100',
       grainAmt: '50',
+      partAmount: '24', partSize: '100', partGlow: '100',
+      flare1Int: '100', flare1Size: '100', flare2Int: '100', flare2Size: '100',
     },
     text: { topText: '', botText: '' },
     selects: {
       fontStyle: 'cormorant', resolution: '1080', framerate: '60',
       partOrigin: 'middle', partDirection: 'center',
+      flare1Orient: 'horizontal', flare2Orient: 'vertical',
     },
     toggles: {
       tgShockwave: true, tgParticles: true,
       tgSpecTop: true, tgSpecBot: true,
       tgGrain: true, tgAmbient: true,
       tgGlowBg: true, tgLogoGlow: false,
+      tgFlare1: false, tgFlare2: false,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
     effects: {
@@ -5628,7 +6218,13 @@ $('resetBtn').addEventListener('click', () => {
         spectrum: { useBg: true, hex: '#ff8c3c' },
         ambient: { useBg: true, hex: '#ff8c3c' },
         logoglow: { useBg: true, hex: '#ffffff' },
+        flare1: { useBg: false, hex: '#7fc8ff' },
+        flare2: { useBg: false, hex: '#7fc8ff' },
       },
+    },
+    flares: {
+      flare1: { x: 0.5, y: 0.5, bounce: true },
+      flare2: { x: 0.5, y: 0.5, bounce: true },
     },
   };
   applyPreset(defaults);

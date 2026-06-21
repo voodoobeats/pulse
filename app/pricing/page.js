@@ -5,8 +5,9 @@ import { useUser } from '@clerk/nextjs';
 import { fbTrack } from '../fbpixel';
 
 const MONTHLY = '9.99';
-const YEARLY_PER_MONTH = '7.99';
-const YEARLY_TOTAL = '95.90';
+const YEARLY_PER_MONTH = '8.33';
+const YEARLY_TOTAL = '99.99';
+const TRIAL_DAYS = 7;
 
 export default function PricingPage() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -33,7 +34,7 @@ export default function PricingPage() {
       const key = 'fb_purchase_' + (sid || 'session');
       if (!localStorage.getItem(key)) {
         const value = plan === 'yearly' ? parseFloat(YEARLY_TOTAL) : parseFloat(MONTHLY);
-        fbTrack('Purchase', { value, currency: 'EUR' });
+        fbTrack('Purchase', { value, currency: 'USD' });
         if (sid) localStorage.setItem(key, '1');
       }
     } else if (p.get('canceled')) {
@@ -114,7 +115,7 @@ export default function PricingPage() {
           Monthly
         </button>
         <button className={yearly ? 'active' : ''} onClick={() => setBilling('yearly')}>
-          Yearly <span className="save">-20%</span>
+          Yearly <span className="save">-17%</span>
         </button>
       </div>
 
@@ -124,16 +125,21 @@ export default function PricingPage() {
           <h3>Pulse Premium</h3>
 
           <div className="price">
-            &euro;{yearly ? YEARLY_PER_MONTH : MONTHLY} <small>/ month</small>
+            ${yearly ? YEARLY_PER_MONTH : MONTHLY} <small>/ month</small>
           </div>
 
           {yearly ? (
-            <p className="price-note"><s>&euro;{MONTHLY}</s> &nbsp;&middot;&nbsp; &euro;{YEARLY_TOTAL} billed annually</p>
+            <p className="price-note"><s>${MONTHLY}</s> &nbsp;&middot;&nbsp; ${YEARLY_TOTAL} billed annually</p>
           ) : (
             <p className="price-note">Cancel anytime</p>
           )}
 
+          {!isPremium && (
+            <p className="price-note">{TRIAL_DAYS}-day free trial &middot; then ${yearly ? `${YEARLY_TOTAL}/year` : `${MONTHLY}/month`}</p>
+          )}
+
           <ul>
+            <li>{TRIAL_DAYS}-day free trial &mdash; cancel before it ends, pay nothing</li>
             <li>Unlimited rendering (1080p/60 &amp; 4K)</li>
             <li>Shorts export (vertical 9:16)</li>
             <li>No wait time</li>
@@ -152,7 +158,7 @@ export default function PricingPage() {
             </>
           ) : (
             <button className="btn primary" onClick={subscribe} disabled={loading}>
-              {loading ? 'Continuing to Stripe…' : 'Get Premium'}
+              {loading ? 'Continuing to Stripe…' : `Start ${TRIAL_DAYS}-day free trial`}
             </button>
           )}
         </div>

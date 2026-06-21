@@ -33,7 +33,13 @@ export async function POST(req) {
       line_items: [{ price, quantity: 1 }],
       client_reference_id: userId,
       customer_email: email,
-      subscription_data: { metadata: { clerkUserId: userId } },
+      subscription_data: {
+        // 7-day free trial on every new subscription (monthly & yearly).
+        // The trial lives here in code — NOT on the Stripe price — so it can
+        // be changed anytime without recreating prices.
+        trial_period_days: 7,
+        metadata: { clerkUserId: userId },
+      },
       allow_promotion_codes: true,
       success_url: `${origin}/pricing?success=1&plan=${interval}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing?canceled=1`,

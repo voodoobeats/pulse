@@ -32,9 +32,10 @@ export default function TermsPage() {
       <h2>4. Subscriptions, prices &amp; billing</h2>
       <p>
         Premium is offered as a monthly or yearly subscription at the prices shown on the pricing page
-        (in EUR, including any applicable VAT). Subscriptions renew automatically for the same period
-        unless cancelled before the end of the current term. Payments are processed by Stripe; by
-        subscribing you authorise recurring charges. We may change prices for future billing periods
+        (in USD, including any applicable taxes). New subscriptions start with a 7-day free trial; you
+        are not charged if you cancel before the trial ends. After the trial, the subscription renews
+        automatically for the same period unless cancelled before the end of the current term. Payments
+        are processed by Stripe; by subscribing you authorise recurring charges once the trial ends. We may change prices for future billing periods
         and will give reasonable advance notice; changes never apply retroactively to a period already
         paid.
       </p>

@@ -737,6 +737,27 @@
     gap: 32px;
   }
   .render-overlay.show { display: flex; }
+
+  /* Pre-export dialog */
+  .export-modal {
+    position: fixed; inset: 0; background: rgba(10,10,11,0.92); backdrop-filter: blur(8px);
+    z-index: 101; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .export-modal.show { display: flex; }
+  .export-card {
+    width: min(440px, 92vw); background: var(--panel); border: 1px solid var(--line-2);
+    border-radius: 14px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .export-card h3 { font-family: 'Fraunces', serif; font-style: italic; font-size: 22px; margin: 0 0 4px; color: var(--ink); }
+  .export-card .sub { font-size: 12px; color: var(--ink-dim); margin: 0 0 16px; }
+  .export-card label.fld { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .export-card input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-2);
+    background: var(--panel-2); color: var(--ink); font-size: 13px; font-family: inherit;
+  }
+  .export-card input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .export-card .loc-note { font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; line-height: 1.5; }
+  .export-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
   .render-overlay .label {
     font-family: 'Fraunces', serif;
     font-style: italic;
@@ -1109,6 +1130,28 @@
     box-shadow: 0 0 0 1px var(--accent-2) inset;
   }
   canvas#previewCanvas.flare-placing { cursor: crosshair; }
+
+  /* Per-effect header buttons: collapse + gear */
+  .effect-card .fx-gear, .effect-card .fx-collapse {
+    flex: 0 0 auto; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line);
+    background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 13px; line-height: 1;
+    display: flex; align-items: center; justify-content: center; transition: all 0.12s ease;
+  }
+  .effect-card .fx-gear:hover, .effect-card .fx-collapse:hover { color: var(--ink); border-color: var(--accent); }
+  .effect-card .fx-collapse .chev { transition: transform 0.15s ease; }
+  .effect-card.fx-collapsed .fx-collapse .chev { transform: rotate(-90deg); }
+  .effect-card.fx-collapsed .fx-body { display: none; }
+  .effect-card .fx-gear.active { color: var(--accent-2); border-color: var(--accent-2); }
+  .fx-settings {
+    margin-bottom: 12px; padding: 10px 11px; border: 1px dashed var(--line-2); border-radius: 8px;
+    display: flex; flex-direction: column; gap: 9px; background: rgba(255,255,255,0.015);
+  }
+  .fx-settings .cb { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--ink-dim); cursor: pointer; }
+  .fx-settings .fx-automation {
+    align-self: flex-start; padding: 6px 10px; border-radius: 6px; border: 1px dashed var(--line-2);
+    background: transparent; color: var(--ink-faint); font-size: 11px; font-family: inherit;
+    opacity: 0.45; cursor: not-allowed;
+  }
 </style>
 </head>
 <body>
@@ -1341,6 +1384,11 @@
             <div class="field"><label>Particle Amount <span class="v" id="partAmountV">24</span></label><input type="range" id="partAmount" min="4" max="80" value="24" /></div>
             <div class="field"><label>Particle Size <span class="v" id="partSizeV">100%</span></label><input type="range" id="partSize" min="20" max="300" value="100" /></div>
             <div class="field"><label>Glow Strength <span class="v" id="partGlowV">100%</span></label><input type="range" id="partGlow" min="0" max="250" value="100" /></div>
+            <div class="field"><label>Opacity <span class="v" id="partOpacityV">100%</span></label><input type="range" id="partOpacity" min="0" max="100" value="100" /></div>
+            <div class="field"><label>Speed <span class="v" id="partSpeedV">100%</span></label><input type="range" id="partSpeed" min="20" max="300" value="100" /></div>
+            <div class="toggles" style="margin-bottom:10px">
+              <label><input type="checkbox" id="partMirror"><span>Mirror at middle</span></label>
+            </div>
             <div class="color-row">
               <label class="cb"><input type="checkbox" id="cbBg_particles" checked> Use Background Color</label>
               <input type="color" id="col_particles" value="#ff8c3c" disabled>
@@ -1536,6 +1584,21 @@
     <button class="btn primary" id="renderBtn" disabled><span class="ico dot"></span>Render MP4</button>
   </div>
 
+</div>
+
+<!-- EXPORT DIALOG -->
+<div class="export-modal" id="exportModal">
+  <div class="export-card">
+    <h3>Export video</h3>
+    <p class="sub">Choose a file name and where to save it.</p>
+    <label class="fld" for="exportName">File name</label>
+    <input type="text" id="exportName" spellcheck="false" autocomplete="off" />
+    <p class="loc-note" id="exportLocNote"></p>
+    <div class="export-actions">
+      <button class="btn" id="exportCancelBtn">Cancel</button>
+      <button class="btn primary" id="exportConfirmBtn">Render</button>
+    </div>
+  </div>
 </div>
 
 <!-- RENDER OVERLAY -->
@@ -1864,7 +1927,7 @@ async function analyzeLogoPalette(img) {
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
-  'partAmount', 'partSize', 'partGlow',
+  'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
 ].forEach(id => {
   const el = $(id);
@@ -1894,7 +1957,7 @@ async function analyzeLogoPalette(img) {
 
 // Toggle checkboxes — redraw preview on change
 ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
- 'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2'].forEach(id => {
+ 'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -1977,6 +2040,19 @@ const FX_TITLES = {
 };
 const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2'];
 
+// Canonical order in which effects are composed within each pass (behind/front
+// of the logo). drawFrame walks this twice — once for behind-logo effects, once
+// for the rest.
+const FX_RENDER_ORDER = ['ambient', 'glowbg', 'logoglow', 'shockwave', 'particles', 'flare1', 'flare2', 'spectrum', 'grain'];
+
+// Per-effect "render behind the logo" flag (set via each effect's gear menu).
+// Defaults reproduce the original layering: ambient/glow/logoglow/shockwave sit
+// behind the logo, particles/flares/spectrum/grain in front.
+const effectBehindLogo = {
+  ambient: true, glowbg: true, logoglow: true, shockwave: true,
+  particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
+};
+
 function fxCard(fx) { return document.querySelector('.effect-card[data-effect="' + fx + '"]'); }
 function fxIsAdded(fx) {
   const card = fxCard(fx);
@@ -2046,6 +2122,73 @@ $('fxAddBtn').addEventListener('click', () => {
 });
 
 rebuildAddMenu();
+
+// ============================================================
+// EFFECT CARD CHROME — collapse toggle + gear settings (per card)
+// Injected for every effect card so each block doesn't need hand-editing. The
+// gear opens a small settings panel holding "Move effect behind Logo" plus a
+// disabled "Add automation" placeholder (automations come later).
+// ============================================================
+function syncBehindCheckboxes() {
+  document.querySelectorAll('.effect-card').forEach(card => {
+    const fx = card.dataset.effect;
+    const cb = card.querySelector('.fx-behind');
+    if (cb) cb.checked = !!effectBehindLogo[fx];
+  });
+}
+
+document.querySelectorAll('.effect-card').forEach(card => {
+  const fx = card.dataset.effect;
+  const head = card.querySelector('.fx-head');
+  const body = card.querySelector('.fx-body');
+  if (!head || !body) return;
+  const removeBtn = head.querySelector('.fx-remove');
+
+  const gear = document.createElement('button');
+  gear.type = 'button';
+  gear.className = 'fx-gear';
+  gear.title = 'Effect settings';
+  gear.textContent = '⚙';
+
+  const collapse = document.createElement('button');
+  collapse.type = 'button';
+  collapse.className = 'fx-collapse';
+  collapse.title = 'Collapse / expand';
+  collapse.innerHTML = '<span class="chev">▾</span>';
+
+  head.insertBefore(gear, removeBtn);
+  head.insertBefore(collapse, removeBtn);
+
+  const settings = document.createElement('div');
+  settings.className = 'fx-settings';
+  settings.style.display = 'none';
+  settings.innerHTML =
+    '<label class="cb"><input type="checkbox" class="fx-behind"> Move effect behind Logo</label>' +
+    '<button type="button" class="fx-automation" disabled title="Coming soon">+ Add automation</button>';
+  body.insertBefore(settings, body.firstChild);
+
+  const behindCb = settings.querySelector('.fx-behind');
+  if (behindCb) {
+    behindCb.checked = !!effectBehindLogo[fx];
+    behindCb.addEventListener('change', () => {
+      effectBehindLogo[fx] = behindCb.checked;
+      redrawPreviewSafe();
+      autosaveDebounced();
+    });
+  }
+
+  gear.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = settings.style.display !== 'none';
+    settings.style.display = open ? 'none' : 'flex';
+    gear.classList.toggle('active', !open);
+    if (!open) card.classList.remove('fx-collapsed');
+  });
+  collapse.addEventListener('click', (e) => {
+    e.stopPropagation();
+    card.classList.toggle('fx-collapsed');
+  });
+});
 
 // ---------- Bass detection
 // ============================================================
@@ -2755,6 +2898,9 @@ function drawFrame(ctx, w, h, time, bass) {
   const partAmount  = parseInt($('partAmount').value);
   const partSize    = parseFloat($('partSize').value) / 100;
   const partGlow    = parseFloat($('partGlow').value) / 100;
+  const partOpacity = $('partOpacity') ? parseFloat($('partOpacity').value) / 100 : 1;
+  const partSpeed   = $('partSpeed') ? parseFloat($('partSpeed').value) / 100 : 1;
+  const partMirror  = $('partMirror') ? $('partMirror').checked : false;
   const grainAmt    = parseFloat($('grainAmt').value) / 100;
 
   // ==========================================================
@@ -2795,94 +2941,114 @@ function drawFrame(ctx, w, h, time, bass) {
 
   // (removed static 0.30 black wash — BG darkness slider now handles this dynamically)
 
-  // ========== LAYER 2: Ambient particles (subtle shake for immersion) ==========
-  if (tgAmbient) {
-    ctx.save();
-    ctx.translate(shakeX * 0.4, shakeY * 0.4);
-    drawAmbientParticles(ctx, w, h, time, midAdj, bassAdj, effectsAmt, fxColor('ambient'));
-    ctx.restore();
-  }
+  // ==========================================================
+  // EFFECT COMPOSITION
+  // Each effect renders either BEHIND or IN FRONT of the logo, chosen per-effect
+  // via its gear menu (effectBehindLogo). The defaults reproduce the original
+  // layer order exactly.
+  // ==========================================================
 
-  // ========== LAYER 3: Logo + shockwave + glow (NO shake — steady center) ==========
+  // Logo geometry — needed by glow/shockwave even when they sit behind the
+  // logo, so compute it up front (zeros when no logo is loaded).
   let logoW = 0, logoH = 0;
   const cx = w / 2;
   const cy = h / 2;
-
+  let punchScale = 1.0;
   if (state.logoImg) {
-    // New 100% = old 175% logo size feel
-    // Scale 0.43 maps keys-fill of 1.0 to ~43% logo zoom — matches old peak feel
-    // (old system: bassAdj*sens could reach 1.5, times 0.286 = 0.43)
-    const punchScale = 1.0 + bassAdj * logoBounce * 0.43;
-    const logoBaseH = h * 0.37 * logoSize; // was 0.21 * 1.33 — now 0.37 at slider=100%
+    punchScale = 1.0 + bassAdj * logoBounce * 0.43;
+    const logoBaseH = h * 0.37 * logoSize; // 0.37 at slider=100%
     const logoBaseW = logoBaseH * (imgW(state.logoImg) / imgH(state.logoImg));
     logoW = logoBaseW * punchScale;
     logoH = logoBaseH * punchScale;
+  }
+  const glowColor = fxColor('glowbg');
+  const flarePunch = state.logoImg ? punchScale : 1.0;
 
-    const glowColor = fxColor('glowbg');
-
-    // Outer soft glow — gated + scaled by the Glow Background effect
-    if (tgGlowBg) {
-      const glowRadius = Math.max(logoW, logoH) * (0.9 + bassAdj * 0.5) * glowBgSize;
-      const glowAlpha = Math.min(0.95, Math.min(0.85, 0.25 + bassAdj * 0.75 * logoBounce) * glowBgInt);
-      const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
-      glowGrad.addColorStop(0,   rgba(glowColor, glowAlpha));
-      glowGrad.addColorStop(0.3, rgba(glowColor, glowAlpha * 0.55));
-      glowGrad.addColorStop(0.7, rgba(glowColor, glowAlpha * 0.15));
-      glowGrad.addColorStop(1,   rgba(glowColor, 0));
-      ctx.fillStyle = glowGrad;
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalCompositeOperation = 'source-over';
+  // One renderer per effect — invoked in canonical order within each pass.
+  function renderFx(name) {
+    switch (name) {
+      case 'ambient':
+        if (tgAmbient) {
+          ctx.save();
+          ctx.translate(shakeX * 0.4, shakeY * 0.4);
+          drawAmbientParticles(ctx, w, h, time, midAdj, bassAdj, effectsAmt, fxColor('ambient'));
+          ctx.restore();
+        }
+        break;
+      case 'glowbg':
+        if (tgGlowBg && state.logoImg) {
+          const glowRadius = Math.max(logoW, logoH) * (0.9 + bassAdj * 0.5) * glowBgSize;
+          const glowAlpha = Math.min(0.95, Math.min(0.85, 0.25 + bassAdj * 0.75 * logoBounce) * glowBgInt);
+          const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
+          glowGrad.addColorStop(0,   rgba(glowColor, glowAlpha));
+          glowGrad.addColorStop(0.3, rgba(glowColor, glowAlpha * 0.55));
+          glowGrad.addColorStop(0.7, rgba(glowColor, glowAlpha * 0.15));
+          glowGrad.addColorStop(1,   rgba(glowColor, 0));
+          ctx.fillStyle = glowGrad;
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillRect(0, 0, w, h);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        break;
+      case 'logoglow':
+        if (tgLogoGlow && state.logoImg) {
+          drawLogoGlow(ctx, cx, cy, logoW, logoH, fxColor('logoglow'), logoGlowInt, logoGlowSize, bassAdj);
+        }
+        break;
+      case 'shockwave':
+        if (tgShockwave && state.logoImg && effectsAmt > 0.01) {
+          drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, fxColor('shockwave'), Math.max(logoW, logoH));
+        }
+        break;
+      case 'particles':
+        if (tgParticles) {
+          drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection, partAmount, partSize, partGlow, partOpacity, partSpeed, partMirror);
+        }
+        break;
+      case 'flare1':
+        if ($('tgFlare1') && $('tgFlare1').checked) {
+          drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare1'), {
+            orientation: $('flare1Orient').value,
+            intensity: parseFloat($('flare1Int').value) / 100,
+            size: parseFloat($('flare1Size').value) / 100,
+            bounce: $('cbBounce_flare1').checked,
+            x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch,
+          });
+        }
+        break;
+      case 'flare2':
+        if ($('tgFlare2') && $('tgFlare2').checked) {
+          drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare2'), {
+            orientation: $('flare2Orient').value,
+            intensity: parseFloat($('flare2Int').value) / 100,
+            size: parseFloat($('flare2Size').value) / 100,
+            bounce: $('cbBounce_flare2').checked,
+            x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch,
+          });
+        }
+        break;
+      case 'spectrum':
+        if (tgSpecTop || tgSpecBot) {
+          drawMirrorSpectrum(ctx, w, h, time, bassAdj, spectrumAmt, tgSpecTop, tgSpecBot);
+        }
+        break;
+      case 'grain':
+        if (tgGrain && grainAmt > 0.01) {
+          drawGrain(ctx, w, h, time, grainAmt * 0.35);
+        }
+        break;
     }
+  }
 
-    // Logo Glow — a tighter halo emitted by the logo (logo-colored by default)
-    if (tgLogoGlow) {
-      drawLogoGlow(ctx, cx, cy, logoW, logoH, fxColor('logoglow'), logoGlowInt, logoGlowSize, bassAdj);
-    }
-
-    // Expanding pulse-wave shockwaves on each bass onset
-    if (tgShockwave && effectsAmt > 0.01) {
-      drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, fxColor('shockwave'), Math.max(logoW, logoH));
-    }
-
-    // The logo itself — with chromatic aberration on peaks
+  // Behind-logo pass → logo → front pass.
+  for (const _fx of FX_RENDER_ORDER) if (effectBehindLogo[_fx]) renderFx(_fx);
+  if (state.logoImg) {
     drawLogoWithAberration(ctx, cx, cy, logoW, logoH, impulseAdj, effectsAmt, glowColor);
   }
+  for (const _fx of FX_RENDER_ORDER) if (!effectBehindLogo[_fx]) renderFx(_fx);
 
-  // ========== LAYER 4: Bass-hit particle bursts (from center — share no shake for punch) ==========
-  if (tgParticles) {
-    drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection, partAmount, partSize, partGlow);
-  }
-
-  // ========== LAYER 4a: Optical flares (up to 2 — beat-reactive lens flares) ==========
-  const flarePunch = state.logoImg ? (1.0 + bassAdj * logoBounce * 0.43) : 1.0;
-  if ($('tgFlare1') && $('tgFlare1').checked) {
-    drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare1'), {
-      orientation: $('flare1Orient').value,
-      intensity: parseFloat($('flare1Int').value) / 100,
-      size: parseFloat($('flare1Size').value) / 100,
-      bounce: $('cbBounce_flare1').checked,
-      x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch,
-    });
-  }
-  if ($('tgFlare2') && $('tgFlare2').checked) {
-    drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare2'), {
-      orientation: $('flare2Orient').value,
-      intensity: parseFloat($('flare2Int').value) / 100,
-      size: parseFloat($('flare2Size').value) / 100,
-      bounce: $('cbBounce_flare2').checked,
-      x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch,
-    });
-  }
-
-  // ========== LAYER 4b: Audio spectrum (top + bottom can be toggled independently) ==========
-  if (tgSpecTop || tgSpecBot) {
-    drawMirrorSpectrum(ctx, w, h, time, bassAdj, spectrumAmt, tgSpecTop, tgSpecBot);
-  }
-
-  // ========== LAYER 5: Vignette (opens up on bass: 100% → 50% at peak) ==========
+  // ========== Vignette (post — opens up on bass: 100% → 50% at peak) ==========
   if (vigStrength > 0) {
-    // Scale down to 50% of slider value on full bass
     const dynamicVig = vigStrength * (1 - Math.min(1, bassAdj * 1.2) * 0.5);
     if (dynamicVig > 0.01) {
       const vGrad = ctx.createRadialGradient(w/2, h/2, Math.min(w,h) * 0.3, w/2, h/2, Math.max(w,h) * 0.75);
@@ -2893,12 +3059,9 @@ function drawFrame(ctx, w, h, time, bass) {
     }
   }
 
-  // ========== LAYER 6: Film grain ==========
-  if (tgGrain && grainAmt > 0.01) {
-    drawGrain(ctx, w, h, time, grainAmt * 0.35);
-  }
+  // (Effects, logo, and vignette are composed above via the renderFx passes.)
 
-  // ========== LAYER 7: Text overlays ==========
+  // ========== Text overlays ==========
   drawText(ctx, w, h, bassAdj, highAdj);
 
   // ========== LAYER 8: Intro fade-in (5s black → normal) ==========
@@ -3617,7 +3780,7 @@ function drawLogoGlow(ctx, cx, cy, logoW, logoH, color, intensity, size, bassAdj
   ctx.restore();
 }
 
-function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction, amount, sizeMul, glowMul) {
+function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction, amount, sizeMul, glowMul, opacityMul, speedMul, mirror) {
   if (effectsAmt < 0.01 || !onsets || onsets.length === 0) return;
 
   color = color || bgPalette.accent;
@@ -3625,6 +3788,10 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
   direction = direction || 'center';
   sizeMul = (sizeMul == null || isNaN(sizeMul)) ? 1 : sizeMul;
   glowMul = (glowMul == null || isNaN(glowMul)) ? 1 : glowMul;
+  opacityMul = (opacityMul == null || isNaN(opacityMul)) ? 1 : opacityMul;
+  speedMul = (speedMul == null || isNaN(speedMul)) ? 1 : speedMul;
+  mirror = !!mirror;
+  if (opacityMul <= 0.001) return;
 
   const lifetime = 1.2; // seconds
   const particlesPerBurst = (amount && !isNaN(amount)) ? Math.max(1, Math.round(amount)) : 24;
@@ -3657,6 +3824,25 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
 
+  // Paints one particle (core + optional halo) at a given point.
+  function paint(px, py, size, fade) {
+    if (px < -50 || px > w + 50 || py < -50 || py > h + 50) return;
+    // Bright core
+    ctx.fillStyle = rgba(color, fade * 0.9 * opacityMul);
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+    // Soft halo — radius and brightness scale with Glow Strength
+    if (glowMul > 0.001) {
+      const haloR = size * (2 + 2 * glowMul);
+      const haloGrad = ctx.createRadialGradient(px, py, 0, px, py, haloR);
+      haloGrad.addColorStop(0, rgba(color, fade * 0.4 * glowMul * opacityMul));
+      haloGrad.addColorStop(1, rgba(color, 0));
+      ctx.fillStyle = haloGrad;
+      ctx.fillRect(px - haloR, py - haloR, haloR * 2, haloR * 2);
+    }
+  }
+
   for (let o = 0; o < onsets.length; o++) {
     const onset = onsets[o];
     if (onset.time < state.fxStart) continue;
@@ -3681,29 +3867,16 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
         angle = baseAngle(sx, sy) + (rng() - 0.5) * 1.4;
       }
 
-      const speed = (0.18 + rng() * 0.35) * Math.max(w, h) * (0.8 + strength * 0.8);
+      const speed = (0.18 + rng() * 0.35) * Math.max(w, h) * (0.8 + strength * 0.8) * speedMul;
       const gravity = (rng() - 0.5) * 30; // slight drift
       const px = sx + Math.cos(angle) * speed * age + gravity * age * age;
       const py = sy + Math.sin(angle) * speed * age;
       const size = (1.5 + rng() * 3) * effectsAmt * (0.5 + strength) * sizeMul;
 
-      if (px < -50 || px > w + 50 || py < -50 || py > h + 50) continue;
-
-      // Bright core + halo
-      ctx.fillStyle = rgba(color, fade * 0.9);
-      ctx.beginPath();
-      ctx.arc(px, py, size, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Soft halo — radius and brightness scale with Glow Strength
-      if (glowMul > 0.001) {
-        const haloR = size * (2 + 2 * glowMul);
-        const haloGrad = ctx.createRadialGradient(px, py, 0, px, py, haloR);
-        haloGrad.addColorStop(0, rgba(color, fade * 0.4 * glowMul));
-        haloGrad.addColorStop(1, rgba(color, 0));
-        ctx.fillStyle = haloGrad;
-        ctx.fillRect(px - haloR, py - haloR, haloR * 2, haloR * 2);
-      }
+      paint(px, py, size, fade);
+      // Mirror-at-middle: reflect across the vertical centre line (Trap-Nation
+      // style left/right symmetry).
+      if (mirror) paint(w - px, py, size, fade);
     }
   }
 
@@ -4752,9 +4925,53 @@ window.addEventListener('resize', () => { if (state.audioBuffer) drawWaveform();
 // muxed to MP4 via mp4-muxer. Much faster than ffmpeg.wasm.
 // ============================================================
 
-$('renderBtn').addEventListener('click', () => requestRender('main'));
+$('renderBtn').addEventListener('click', openExportDialog);
 $('cancelBtn').addEventListener('click', () => {
   state.cancelRender = true;
+});
+
+// ============================================================
+// PRE-EXPORT DIALOG — file name + save location.
+// Shown before the (premium-gated) main render. If the File System Access API
+// is available we grab a writable handle here, inside the click gesture, and
+// stream the finished video straight to the chosen location; otherwise we fall
+// back to a normal download using the chosen name. Premium gating is untouched:
+// requestRender('main') still asks the parent page for approval.
+// ============================================================
+function openExportDialog() {
+  if (!state.audioBuffer) { toast('Load an audio track first', 'error'); return; }
+  const base = state.audioFile ? state.audioFile.name.replace(/\.[^/.]+$/, '') : 'visualizer';
+  $('exportName').value = base + '_visualizer';
+  const supported = typeof window.showSaveFilePicker === 'function';
+  $('exportLocNote').textContent = supported
+    ? 'After clicking Render you can pick exactly where to save the file.'
+    : 'The file will be saved to your browser’s download folder.';
+  $('exportModal').classList.add('show');
+  setTimeout(() => { try { $('exportName').focus(); $('exportName').select(); } catch (e) {} }, 30);
+}
+function closeExportDialog() { $('exportModal').classList.remove('show'); }
+$('exportCancelBtn').addEventListener('click', closeExportDialog);
+$('exportModal').addEventListener('click', (e) => { if (e.target === $('exportModal')) closeExportDialog(); });
+$('exportName').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('exportConfirmBtn').click(); } });
+
+$('exportConfirmBtn').addEventListener('click', async () => {
+  let name = ($('exportName').value || '').trim().replace(/[\\/:*?"<>|\n\r\t]+/g, '_').replace(/\.+$/, '');
+  if (!name) name = 'visualizer';
+  state.exportName = name;
+  state.exportHandle = null;
+  if (typeof window.showSaveFilePicker === 'function') {
+    try {
+      state.exportHandle = await window.showSaveFilePicker({
+        suggestedName: name + '.mp4',
+        types: [{ description: 'MP4 video', accept: { 'video/mp4': ['.mp4'] } }],
+      });
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // user backed out of the picker
+      state.exportHandle = null; // other failure → fall back to a normal download
+    }
+  }
+  closeExportDialog();
+  requestRender('main');
 });
 
 // ============================================================
@@ -5571,16 +5788,33 @@ async function startRender() {
 
     if (state.cancelRender) throw new Error('Cancelled');
 
-    // Download
-    const url = URL.createObjectURL(result.blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const baseName = state.audioFile.name.replace(/\.[^/.]+$/, '');
-    a.download = baseName + '_visualizer.' + result.ext;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    // Save — use the file name (and, where supported, the save location) the
+    // user picked in the pre-export dialog. Falls back to a normal download.
+    const baseName = state.exportName || (state.audioFile.name.replace(/\.[^/.]+$/, '') + '_visualizer');
+    const fileName = baseName + '.' + result.ext;
+    let savedToHandle = false;
+    if (state.exportHandle && result.ext === 'mp4') {
+      try {
+        const writable = await state.exportHandle.createWritable();
+        await writable.write(result.blob);
+        await writable.close();
+        savedToHandle = true;
+      } catch (e) {
+        console.warn('Writing to chosen location failed, falling back to download:', e);
+      }
+    }
+    if (!savedToHandle) {
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
+    state.exportHandle = null;
+    state.exportName = null;
 
     $('renderBar').style.width = '100%';
     toast(`Render complete · ${formatBytes(result.blob.size)} (${result.ext.toUpperCase()}) · ${result.rendererName || 'render'}`, 'success');
@@ -5595,6 +5829,8 @@ async function startRender() {
     overlay.classList.remove('show');
     state.isRendering = false;
     setStatus('Ready', 'ready');
+    state.exportHandle = null;
+    state.exportName = null;
   }
 }
 
@@ -5976,12 +6212,12 @@ const PRESET_SLIDER_IDS = [
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
-  'partAmount', 'partSize', 'partGlow',
+  'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
 ];
 const PRESET_TEXT_IDS = ['topText', 'botText'];
 const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror'];
 
 function gatherEffects() {
   const colors = {};
@@ -6006,6 +6242,7 @@ function gatherPreset() {
       flare1: { x: flarePos.flare1.x, y: flarePos.flare1.y, bounce: !!($('cbBounce_flare1') && $('cbBounce_flare1').checked) },
       flare2: { x: flarePos.flare2.x, y: flarePos.flare2.y, bounce: !!($('cbBounce_flare2') && $('cbBounce_flare2').checked) },
     },
+    behind: { ...effectBehindLogo },
   };
   PRESET_SLIDER_IDS.forEach(id => {
     const el = $(id);
@@ -6130,6 +6367,14 @@ function applyPreset(preset, silent) {
     });
   }
 
+  // Per-effect "render behind logo" flags
+  if (preset.behind) {
+    Object.keys(effectBehindLogo).forEach(fx => {
+      if (typeof preset.behind[fx] === 'boolean') effectBehindLogo[fx] = preset.behind[fx];
+    });
+  }
+  if (typeof syncBehindCheckboxes === 'function') syncBehindCheckboxes();
+
   // Modular effects: which cards are active + per-effect colors
   applyEffects(preset.effects);
 
@@ -6192,7 +6437,7 @@ $('resetBtn').addEventListener('click', () => {
       shortFadeIn: '1', shortFadeOut: '3',
       glowBgInt: '100', glowBgSize: '100', logoGlowInt: '100', logoGlowSize: '100',
       grainAmt: '50',
-      partAmount: '24', partSize: '100', partGlow: '100',
+      partAmount: '24', partSize: '100', partGlow: '100', partOpacity: '100', partSpeed: '100',
       flare1Int: '100', flare1Size: '100', flare2Int: '100', flare2Size: '100',
     },
     text: { topText: '', botText: '' },
@@ -6207,6 +6452,7 @@ $('resetBtn').addEventListener('click', () => {
       tgGrain: true, tgAmbient: true,
       tgGlowBg: true, tgLogoGlow: false,
       tgFlare1: false, tgFlare2: false,
+      partMirror: false,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
     effects: {
@@ -6225,6 +6471,10 @@ $('resetBtn').addEventListener('click', () => {
     flares: {
       flare1: { x: 0.5, y: 0.5, bounce: true },
       flare2: { x: 0.5, y: 0.5, bounce: true },
+    },
+    behind: {
+      ambient: true, glowbg: true, logoglow: true, shockwave: true,
+      particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
     },
   };
   applyPreset(defaults);

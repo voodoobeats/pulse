@@ -24,26 +24,39 @@ export async function POST(req) {
 
   const user = await currentUser();
   const email = user?.emailAddresses?.[0]?.emailAddress;
+  const md = user?.publicMetadata || {};
   const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || '';
+
+  // Trial-abuse guard: only first-time subscribers get the free trial. Anyone
+  // who has ever subscribed or trialed before — even after cancelling — is
+  // gated out, so cancel-and-resubscribe can't farm endless trials.
+  // (stripeSubscriptionId is set by the webhook/sync after the first checkout,
+  // so it stays set even once the subscription is cancelled.)
+  const existingCustomerId = md.stripeCustomerId || null;
+  const hasSubscribedBefore = !!md.hasUsedTrial || !!md.stripeSubscriptionId;
 
   try {
     const stripe = getStripe();
-    const session = await stripe.checkout.sessions.create({
+    const params = {
       mode: 'subscription',
       line_items: [{ price, quantity: 1 }],
       client_reference_id: userId,
-      customer_email: email,
       subscription_data: {
-        // 7-day free trial on every new subscription (monthly & yearly).
-        // The trial lives here in code — NOT on the Stripe price — so it can
-        // be changed anytime without recreating prices.
-        trial_period_days: 7,
         metadata: { clerkUserId: userId },
+        // 7-day free trial — code-controlled (NOT on the Stripe price) and only
+        // granted to first-time subscribers.
+        ...(hasSubscribedBefore ? {} : { trial_period_days: 7 }),
       },
       allow_promotion_codes: true,
       success_url: `${origin}/pricing?success=1&plan=${interval}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing?canceled=1`,
-    });
+    };
+    // Reuse the same Stripe customer per user so the trial/subscription history
+    // is linked (Stripe rejects passing both customer and customer_email).
+    if (existingCustomerId) params.customer = existingCustomerId;
+    else params.customer_email = email;
+
+    const session = await stripe.checkout.sessions.create(params);
     return Response.json({ url: session.url });
   } catch (err) {
     return Response.json(

@@ -17,6 +17,9 @@ export default function PricingPage() {
 
   const md = user?.publicMetadata || {};
   const isPremium = md.plan === 'premium';
+  // Trial is only offered to first-time subscribers (mirrors the checkout guard).
+  const hasSubscribedBefore = !!md.hasUsedTrial || !!md.stripeSubscriptionId;
+  const showTrial = !isPremium && !hasSubscribedBefore;
   const cancelAtPeriodEnd = !!md.cancelAtPeriodEnd;
   const endsOn = md.currentPeriodEnd
     ? new Date(md.currentPeriodEnd * 1000).toLocaleDateString('en-US', {
@@ -134,12 +137,14 @@ export default function PricingPage() {
             <p className="price-note">Cancel anytime</p>
           )}
 
-          {!isPremium && (
+          {showTrial && (
             <p className="price-note">{TRIAL_DAYS}-day free trial &middot; then ${yearly ? `${YEARLY_TOTAL}/year` : `${MONTHLY}/month`}</p>
           )}
 
           <ul>
-            <li>{TRIAL_DAYS}-day free trial &mdash; cancel before it ends, pay nothing</li>
+            {showTrial && (
+              <li>{TRIAL_DAYS}-day free trial &mdash; cancel before it ends, pay nothing</li>
+            )}
             <li>Unlimited rendering (1080p/60 &amp; 4K)</li>
             <li>Shorts export (vertical 9:16)</li>
             <li>No wait time</li>
@@ -158,7 +163,7 @@ export default function PricingPage() {
             </>
           ) : (
             <button className="btn primary" onClick={subscribe} disabled={loading}>
-              {loading ? 'Continuing to Stripe…' : `Start ${TRIAL_DAYS}-day free trial`}
+              {loading ? 'Continuing to Stripe…' : (showTrial ? `Start ${TRIAL_DAYS}-day free trial` : 'Get Premium')}
             </button>
           )}
         </div>

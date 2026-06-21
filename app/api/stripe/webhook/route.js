@@ -20,6 +20,9 @@ async function syncPlan(userId, subscription, customerId) {
       stripeSubscriptionId: subscription.id,
       currentPeriodEnd: subscription.current_period_end || null,
       cancelAtPeriodEnd: !!subscription.cancel_at_period_end,
+      // Permanent flag: once a subscription exists, this user has consumed
+      // their trial eligibility — the checkout route won't grant another.
+      hasUsedTrial: true,
     },
   });
 }

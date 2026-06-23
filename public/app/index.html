@@ -758,6 +758,47 @@
   .export-card input[type="text"]:focus { outline: none; border-color: var(--accent); }
   .export-card .loc-note { font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; line-height: 1.5; }
   .export-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* Per-slider automation button */
+  .field label .v { margin-left: auto; }
+  .auto-btn {
+    width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--line-2);
+    background: transparent; color: var(--ink-faint); font-size: 9px; line-height: 1;
+    cursor: pointer; padding: 0; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 auto;
+  }
+  .auto-btn:hover { color: var(--ink); border-color: var(--accent); }
+  .auto-btn.active { border-color: var(--accent-2); color: var(--accent-2); background: rgba(95,201,231,0.12); }
+
+  /* Automation modal */
+  .auto-modal {
+    position: fixed; inset: 0; background: rgba(10,10,11,0.92); backdrop-filter: blur(8px);
+    z-index: 102; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .auto-modal.show { display: flex; }
+  .auto-card {
+    width: min(640px, 95vw); background: var(--panel); border: 1px solid var(--line-2);
+    border-radius: 14px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .auto-card h3 { font-family: 'Fraunces', serif; font-style: italic; font-size: 22px; margin: 0 0 4px; color: var(--ink); }
+  .auto-card .sub { font-size: 12px; color: var(--ink-dim); margin: 0 0 16px; }
+  .auto-choose { display: flex; gap: 12px; }
+  .auto-choose button {
+    flex: 1; padding: 18px 14px; border-radius: 12px; border: 1px solid var(--line-2);
+    background: var(--panel-2); color: var(--ink); cursor: pointer; font-family: inherit; text-align: left;
+  }
+  .auto-choose button:hover { border-color: var(--accent-2); }
+  .auto-choose button strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .auto-choose button span { font-size: 11px; color: var(--ink-dim); }
+  .auto-card .row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+  .auto-card .row label { font-size: 11px; color: var(--ink-dim); width: 110px; flex: 0 0 auto; text-transform: uppercase; letter-spacing: 0.1em; }
+  .auto-card .row input[type="range"] { flex: 1; }
+  .auto-card .row .num { width: 54px; text-align: right; font-size: 12px; color: var(--accent); }
+  .auto-graph { width: 100%; height: 260px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; display: block; touch-action: none; cursor: crosshair; }
+  .auto-actions { display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+  .auto-actions .right { display: flex; gap: 10px; margin-left: auto; }
+  .auto-card select.auto-switch { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font-size: 12px; margin-bottom: 12px; }
+  .auto-hint { font-size: 11px; color: var(--ink-faint); margin-top: 10px; line-height: 1.5; }
   .render-overlay .label {
     font-family: 'Fraunces', serif;
     font-style: italic;
@@ -2190,6 +2231,62 @@ const effectBehindLogo = {
   image: false, rgbsplit: false,
 };
 
+// ============================================================
+// AUTOMATION SYSTEM
+// Each automatable slider can carry ONE automation:
+//   { type:'time',  keys:[{t:seconds, v:sliderValue}, ...] }   (interpolated)
+//   { type:'sound', base:sliderValue, react:amount }           (value = base + react*bassFill)
+// Built-in reactivity (e.g. logo bounce) is separate and stacks on top.
+// ============================================================
+const automations = {};
+// Sliders that read their value per-frame through pval() and can be automated.
+const AUTOMATABLE = [
+  'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig', 'spectrum', 'effects',
+  'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
+  'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
+  'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
+  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+];
+let __autoTime = 0;   // current frame time (seconds) — set at the top of drawFrame
+let __autoBass = 0;   // current bass-keys fill (0..1) — set at the top of drawFrame
+
+function evalKeyframes(keys, t) {
+  if (!keys || !keys.length) return null;
+  if (t <= keys[0].t) return keys[0].v;
+  const last = keys[keys.length - 1];
+  if (t >= last.t) return last.v;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const a = keys[i], b = keys[i + 1];
+    if (t >= a.t && t <= b.t) {
+      const span = (b.t - a.t) || 1;
+      const f = (t - a.t) / span;
+      return a.v + (b.v - a.v) * f;
+    }
+  }
+  return last.v;
+}
+
+// Effective value of a slider at the current frame (slider value unless automated).
+function pval(id) {
+  const el = $(id);
+  const raw = el ? parseFloat(el.value) : 0;
+  const a = automations[id];
+  if (!a) return raw;
+  let v = raw;
+  if (a.type === 'sound') {
+    v = a.base + a.react * __autoBass;
+  } else if (a.type === 'time' && a.keys && a.keys.length) {
+    const r = evalKeyframes(a.keys, __autoTime);
+    if (r != null) v = r;
+  }
+  if (el) {
+    const mn = parseFloat(el.min), mx = parseFloat(el.max);
+    if (!isNaN(mn) && v < mn) v = mn;
+    if (!isNaN(mx) && v > mx) v = mx;
+  }
+  return v;
+}
+
 function fxCard(fx) { return document.querySelector('.effect-card[data-effect="' + fx + '"]'); }
 function fxIsAdded(fx) {
   const card = fxCard(fx);
@@ -2329,6 +2426,336 @@ document.querySelectorAll('.effect-card').forEach(card => {
     card.classList.toggle('fx-collapsed');
   });
 });
+
+// ============================================================
+// AUTOMATION UI — per-slider button, type chooser, sound editor, time graph
+// ============================================================
+function paramLabelText(id) {
+  const el = $(id);
+  const field = el && el.closest('.field');
+  const label = field && field.querySelector('label');
+  if (label) {
+    let t = '';
+    label.childNodes.forEach(n => { if (n.nodeType === 3) t += n.textContent; });
+    t = t.trim();
+    if (t) return t;
+  }
+  return id;
+}
+function paramRange(id) {
+  const el = $(id);
+  const mn = el ? parseFloat(el.min) : 0;
+  const mx = el ? parseFloat(el.max) : 100;
+  return [isNaN(mn) ? 0 : mn, isNaN(mx) ? 100 : mx];
+}
+function paramCurrent(id) {
+  const el = $(id);
+  return el ? parseFloat(el.value) : 0;
+}
+function autoRedraw() {
+  if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
+}
+
+function refreshAutoButtons() {
+  document.querySelectorAll('.auto-btn').forEach(b => {
+    const a = automations[b.dataset.param];
+    b.classList.toggle('active', !!a);
+    b.textContent = a ? (a.type === 'time' ? '⏱' : '♪') : 'A';
+    b.title = a ? ('Automated (' + a.type + ') — click to edit') : 'Automate this value';
+  });
+}
+function injectAutoButtons() {
+  AUTOMATABLE.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    const field = el.closest('.field');
+    if (!field) return;
+    const label = field.querySelector('label');
+    if (!label || label.querySelector('.auto-btn')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'auto-btn';
+    b.dataset.param = id;
+    b.textContent = 'A';
+    const v = label.querySelector('.v');
+    if (v) label.insertBefore(b, v); else label.appendChild(b);
+    b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openAutomation(id); });
+  });
+  refreshAutoButtons();
+}
+
+// ---- Modal scaffolding
+let _autoModal = null;
+function autoModal() {
+  if (_autoModal) return _autoModal;
+  const m = document.createElement('div');
+  m.className = 'auto-modal';
+  m.innerHTML = '<div class="auto-card"></div>';
+  m.addEventListener('click', (e) => { if (e.target === m) closeAuto(); });
+  document.body.appendChild(m);
+  _autoModal = m;
+  return m;
+}
+function openAutoHtml(html) {
+  const m = autoModal();
+  m.querySelector('.auto-card').innerHTML = html;
+  m.classList.add('show');
+  return m.querySelector('.auto-card');
+}
+function closeAuto() {
+  detachGraph();
+  if (_autoModal) _autoModal.classList.remove('show');
+}
+
+// ---- Entry point
+function openAutomation(id) {
+  if (automations[id]) {
+    if (automations[id].type === 'sound') openSoundEditor(id);
+    else openTimeEditor(id);
+  } else {
+    openChooser(id);
+  }
+}
+
+function openChooser(id) {
+  const card = openAutoHtml(
+    '<h3>Add automation</h3>' +
+    '<p class="sub">' + paramLabelText(id) + '</p>' +
+    '<div class="auto-choose">' +
+      '<button id="chTime"><strong>Time based</strong><span>Keyframes on a graph over the timeline.</span></button>' +
+      '<button id="chSound"><strong>Sound based</strong><span>A base value that reacts to the bass keys.</span></button>' +
+    '</div>' +
+    '<div class="auto-actions"><div class="right"><button class="btn" id="chCancel">Cancel</button></div></div>'
+  );
+  card.querySelector('#chCancel').addEventListener('click', closeAuto);
+  card.querySelector('#chTime').addEventListener('click', () => {
+    const dur = state.audioBuffer ? state.audioBuffer.duration : 60;
+    const cur = paramCurrent(id);
+    automations[id] = { type: 'time', keys: [{ t: 0, v: cur }, { t: dur, v: cur }] };
+    refreshAutoButtons(); autosaveDebounced();
+    openTimeEditor(id);
+  });
+  card.querySelector('#chSound').addEventListener('click', () => {
+    const [mn, mx] = paramRange(id);
+    automations[id] = { type: 'sound', base: paramCurrent(id), react: Math.round((mx - mn) * 0.25) };
+    refreshAutoButtons(); autoRedraw(); autosaveDebounced();
+    openSoundEditor(id);
+  });
+}
+
+// ---- Sound editor
+function openSoundEditor(id) {
+  const a = automations[id];
+  const [mn, mx] = paramRange(id);
+  const card = openAutoHtml(
+    '<h3>Sound automation</h3>' +
+    '<p class="sub">' + paramLabelText(id) + ' &middot; value = base + react &times; bass</p>' +
+    '<div class="row"><label>Base value</label><input type="range" id="sndBase" min="' + mn + '" max="' + mx + '" value="' + a.base + '"><span class="num" id="sndBaseV">' + a.base + '</span></div>' +
+    '<div class="row"><label>React amount</label><input type="range" id="sndReact" min="0" max="' + (mx - mn) + '" value="' + a.react + '"><span class="num" id="sndReactV">' + a.react + '</span></div>' +
+    '<p class="auto-hint">When the bass keys hit 100%, the value rises by the full react amount above the base. Built-in reactivity (e.g. logo bounce) still stacks on top.</p>' +
+    '<div class="auto-actions"><button class="btn danger" id="sndRemove">Remove automation</button><div class="right"><button class="btn primary" id="sndDone">Done</button></div></div>'
+  );
+  const base = card.querySelector('#sndBase'), react = card.querySelector('#sndReact');
+  const baseV = card.querySelector('#sndBaseV'), reactV = card.querySelector('#sndReactV');
+  base.addEventListener('input', () => { a.base = parseFloat(base.value); baseV.textContent = base.value; autoRedraw(); autosaveDebounced(); });
+  react.addEventListener('input', () => { a.react = parseFloat(react.value); reactV.textContent = react.value; autoRedraw(); autosaveDebounced(); });
+  card.querySelector('#sndDone').addEventListener('click', closeAuto);
+  card.querySelector('#sndRemove').addEventListener('click', () => { removeAutomation(id); closeAuto(); });
+}
+
+function removeAutomation(id) {
+  delete automations[id];
+  refreshAutoButtons(); autoRedraw(); autosaveDebounced();
+}
+
+// ---- Time graph editor
+let _graphCanvas = null, _graphId = null, _graphSel = -1, _graphDrag = false;
+function timeAutomatedIds() { return AUTOMATABLE.filter(id => automations[id] && automations[id].type === 'time'); }
+
+function openTimeEditor(id) {
+  _graphId = id; _graphSel = -1;
+  const others = timeAutomatedIds();
+  const opts = others.map(o => '<option value="' + o + '"' + (o === id ? ' selected' : '') + '>' + paramLabelText(o) + '</option>').join('');
+  const card = openAutoHtml(
+    '<h3>Time automation</h3>' +
+    '<select class="auto-switch" id="grSwitch">' + opts + '</select>' +
+    '<canvas class="auto-graph" id="grCanvas"></canvas>' +
+    '<p class="auto-hint">Click on the graph to add a keyframe; drag a point to move it; double-click a point to delete it. The vertical line is the current playhead.</p>' +
+    '<div class="auto-actions">' +
+      '<button class="btn danger" id="grRemove">Remove automation</button>' +
+      '<div class="right">' +
+        '<button class="btn" id="grAdd">Add keyframe at playhead</button>' +
+        '<button class="btn" id="grDel">Delete selected</button>' +
+        '<button class="btn primary" id="grDone">Done</button>' +
+      '</div>' +
+    '</div>'
+  );
+  card.querySelector('#grSwitch').addEventListener('change', (e) => { openTimeEditor(e.target.value); });
+  card.querySelector('#grDone').addEventListener('click', closeAuto);
+  card.querySelector('#grRemove').addEventListener('click', () => { removeAutomation(id); closeAuto(); });
+  card.querySelector('#grAdd').addEventListener('click', () => addKeyframeAtPlayhead(id));
+  card.querySelector('#grDel').addEventListener('click', () => deleteSelectedKey());
+  attachGraph(card.querySelector('#grCanvas'));
+}
+
+function graphDur() { return state.audioBuffer ? state.audioBuffer.duration : 60; }
+function graphMetrics() {
+  const c = _graphCanvas;
+  const W = c.width, H = c.height;
+  const padL = 10, padR = 10, padT = 10, padB = 18;
+  const [mn, mx] = paramRange(_graphId);
+  const dur = graphDur();
+  return { W, H, padL, padR, padT, padB, mn, mx, dur };
+}
+function gX(t) { const m = graphMetrics(); return m.padL + (t / (m.dur || 1)) * (m.W - m.padL - m.padR); }
+function gY(v) { const m = graphMetrics(); const f = (v - m.mn) / ((m.mx - m.mn) || 1); return (m.H - m.padB) - f * (m.H - m.padT - m.padB); }
+function gInvX(px) { const m = graphMetrics(); return Math.max(0, Math.min(m.dur, (px - m.padL) / ((m.W - m.padL - m.padR) || 1) * m.dur)); }
+function gInvY(py) { const m = graphMetrics(); const f = ((m.H - m.padB) - py) / ((m.H - m.padT - m.padB) || 1); return Math.max(m.mn, Math.min(m.mx, m.mn + f * (m.mx - m.mn))); }
+
+function drawAutoGraph() {
+  const c = _graphCanvas; if (!c) return;
+  const ctx = c.getContext('2d');
+  const m = graphMetrics();
+  ctx.clearRect(0, 0, m.W, m.H);
+  // frame
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(m.padL, m.padT, m.W - m.padL - m.padR, m.H - m.padT - m.padB);
+  // other automated params faintly
+  ctx.lineWidth = 1.5;
+  timeAutomatedIds().forEach(oid => {
+    if (oid === _graphId) return;
+    const a = automations[oid];
+    ctx.strokeStyle = 'rgba(138,138,148,0.25)';
+    ctx.beginPath();
+    a.keys.forEach((k, i) => { const x = gX(k.t), y = gY(k.v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  });
+  // playhead
+  const t = getCurrentTime();
+  const px = gX(t);
+  ctx.strokeStyle = 'rgba(95,201,231,0.7)';
+  ctx.beginPath(); ctx.moveTo(px, m.padT); ctx.lineTo(px, m.H - m.padB); ctx.stroke();
+  // active curve
+  const a = automations[_graphId];
+  if (a && a.keys && a.keys.length) {
+    ctx.strokeStyle = 'var(--accent)';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#ff8c3c';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    a.keys.forEach((k, i) => { const x = gX(k.t), y = gY(k.v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    a.keys.forEach((k, i) => {
+      const x = gX(k.t), y = gY(k.v);
+      ctx.beginPath(); ctx.arc(x, y, i === _graphSel ? 6 : 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = i === _graphSel ? '#ffffff' : (getComputedStyle(document.documentElement).getPropertyValue('--accent-2') || '#5fc9e7');
+      ctx.fill();
+    });
+  }
+}
+
+function sortKeys(id) { automations[id].keys.sort((p, q) => p.t - q.t); }
+function addKeyframeAtPlayhead(id) {
+  const t = Math.max(0, Math.min(graphDur(), getCurrentTime()));
+  const cur = pval(id); // current effective value at playhead
+  automations[id].keys.push({ t, v: cur });
+  sortKeys(id);
+  _graphSel = automations[id].keys.findIndex(k => k.t === t);
+  drawAutoGraph(); autoRedraw(); autosaveDebounced();
+}
+function deleteSelectedKey() {
+  const a = automations[_graphId];
+  if (!a || _graphSel < 0 || a.keys.length <= 1) return;
+  a.keys.splice(_graphSel, 1);
+  _graphSel = -1;
+  drawAutoGraph(); autoRedraw(); autosaveDebounced();
+}
+
+function graphHit(px, py) {
+  const a = automations[_graphId];
+  if (!a) return -1;
+  for (let i = 0; i < a.keys.length; i++) {
+    const dx = px - gX(a.keys[i].t), dy = py - gY(a.keys[i].v);
+    if (dx * dx + dy * dy <= 100) return i;
+  }
+  return -1;
+}
+function graphPointer(e) {
+  const c = _graphCanvas;
+  const rect = c.getBoundingClientRect();
+  const px = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const py = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  // canvas internal px == css px (we size them equal)
+  return [px * (c.width / rect.width), py * (c.height / rect.height)];
+}
+function onGraphDown(e) {
+  e.preventDefault();
+  const [px, py] = graphPointer(e);
+  let hit = graphHit(px, py);
+  const a = automations[_graphId];
+  if (hit < 0) {
+    a.keys.push({ t: gInvX(px), v: gInvY(py) });
+    sortKeys(_graphId);
+    hit = graphHit(px, py);
+  }
+  _graphSel = hit;
+  _graphDrag = true;
+  drawAutoGraph();
+}
+function onGraphMove(e) {
+  if (!_graphDrag || _graphSel < 0) return;
+  e.preventDefault();
+  const [px, py] = graphPointer(e);
+  const a = automations[_graphId];
+  a.keys[_graphSel].t = gInvX(px);
+  a.keys[_graphSel].v = gInvY(py);
+  // keep sorted, track the moved node
+  const moved = a.keys[_graphSel];
+  sortKeys(_graphId);
+  _graphSel = a.keys.indexOf(moved);
+  drawAutoGraph(); autoRedraw();
+}
+function onGraphUp() { if (_graphDrag) { _graphDrag = false; autosaveDebounced(); } }
+function onGraphDbl(e) {
+  const [px, py] = graphPointer(e);
+  const hit = graphHit(px, py);
+  if (hit >= 0 && automations[_graphId].keys.length > 1) {
+    automations[_graphId].keys.splice(hit, 1);
+    _graphSel = -1;
+    drawAutoGraph(); autoRedraw(); autosaveDebounced();
+  }
+}
+function attachGraph(canvas) {
+  _graphCanvas = canvas;
+  // size the backing store to the displayed size
+  requestAnimationFrame(() => {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(100, Math.round(rect.width));
+    canvas.height = Math.max(100, Math.round(rect.height));
+    drawAutoGraph();
+  });
+  canvas.addEventListener('mousedown', onGraphDown);
+  canvas.addEventListener('touchstart', onGraphDown, { passive: false });
+  window.addEventListener('mousemove', onGraphMove);
+  window.addEventListener('touchmove', onGraphMove, { passive: false });
+  window.addEventListener('mouseup', onGraphUp);
+  window.addEventListener('touchend', onGraphUp);
+  canvas.addEventListener('dblclick', onGraphDbl);
+}
+function detachGraph() {
+  if (_graphCanvas) {
+    _graphCanvas.removeEventListener('mousedown', onGraphDown);
+    _graphCanvas.removeEventListener('touchstart', onGraphDown);
+    _graphCanvas.removeEventListener('dblclick', onGraphDbl);
+  }
+  window.removeEventListener('mousemove', onGraphMove);
+  window.removeEventListener('touchmove', onGraphMove);
+  window.removeEventListener('mouseup', onGraphUp);
+  window.removeEventListener('touchend', onGraphUp);
+  _graphCanvas = null; _graphDrag = false;
+}
+
+injectAutoButtons();
 
 // ---------- Bass detection
 // ============================================================
@@ -3010,15 +3437,22 @@ function drawFrame(ctx, w, h, time, bass) {
   const high = getHighAt(time);
   const impulse = getImpulseAt(time);
 
-  const logoSize   = parseFloat($('logoSize').value) / 100;
-  const logoBounce = parseFloat($('logoBounce').value) / 100;
-  const bgBounce   = parseFloat($('bgBounce').value) / 100;
-  const desatAmt   = parseFloat($('desat').value) / 100;
-  const darkAmt    = parseFloat($('dark').value) / 100;
-  const shakeAmtSlider = parseFloat($('shake').value) / 100;
-  const vigStrength= parseFloat($('vig').value) / 100;
-  const spectrumAmt= parseFloat($('spectrum').value) / 100;
-  const effectsAmt = parseFloat($('effects').value) / 100;
+  // Bass-keys fill drives sound automations — compute it BEFORE reading params
+  // so pval() can apply sound-based automations this frame.
+  const bassAdj = getKeysFillSmoothed(time);
+  __autoTime = time;
+  __autoBass = bassAdj;
+
+  // Slider reads go through pval() so automations (time keyframes / sound) apply.
+  const logoSize   = pval('logoSize') / 100;
+  const logoBounce = pval('logoBounce') / 100;
+  const bgBounce   = pval('bgBounce') / 100;
+  const desatAmt   = pval('desat') / 100;
+  const darkAmt    = pval('dark') / 100;
+  const shakeAmtSlider = pval('shake') / 100;
+  const vigStrength= pval('vig') / 100;
+  const spectrumAmt= pval('spectrum') / 100;
+  const effectsAmt = pval('effects') / 100;
 
   // Effect on/off toggles
   const tgShockwave = $('tgShockwave').checked;
@@ -3029,40 +3463,33 @@ function drawFrame(ctx, w, h, time, bass) {
   const tgAmbient   = $('tgAmbient').checked;
   const tgGlowBg    = $('tgGlowBg').checked;
   const tgLogoGlow  = $('tgLogoGlow').checked;
-  const glowBgInt   = parseFloat($('glowBgInt').value) / 100;
-  const glowBgSize  = parseFloat($('glowBgSize').value) / 100;
-  const logoGlowInt = parseFloat($('logoGlowInt').value) / 100;
-  const logoGlowSize= parseFloat($('logoGlowSize').value) / 100;
+  const glowBgInt   = pval('glowBgInt') / 100;
+  const glowBgSize  = pval('glowBgSize') / 100;
+  const logoGlowInt = pval('logoGlowInt') / 100;
+  const logoGlowSize= pval('logoGlowSize') / 100;
   const partOrigin  = $('partOrigin').value;
   const partDirection = $('partDirection').value;
-  const partAmount  = parseInt($('partAmount').value);
-  const partSize    = parseFloat($('partSize').value) / 100;
-  const partGlow    = parseFloat($('partGlow').value) / 100;
-  const partOpacity = $('partOpacity') ? parseFloat($('partOpacity').value) / 100 : 1;
-  const partSpeed   = $('partSpeed') ? parseFloat($('partSpeed').value) / 100 : 1;
+  const partAmount  = Math.round(pval('partAmount'));
+  const partSize    = pval('partSize') / 100;
+  const partGlow    = pval('partGlow') / 100;
+  const partOpacity = $('partOpacity') ? pval('partOpacity') / 100 : 1;
+  const partSpeed   = $('partSpeed') ? pval('partSpeed') / 100 : 1;
   const partMirror  = $('partMirror') ? $('partMirror').checked : false;
-  const grainAmt    = parseFloat($('grainAmt').value) / 100;
+  const grainAmt    = pval('grainAmt') / 100;
 
   // New modular effects
   const tgCameraShake = $('tgCameraShake') ? $('tgCameraShake').checked : true;
-  const shakeBlurMul  = $('shakeBlur') ? parseFloat($('shakeBlur').value) / 100 : 1;
+  const shakeBlurMul  = $('shakeBlur') ? pval('shakeBlur') / 100 : 1;
   const tgRgbSplit  = $('tgRgbSplit') ? $('tgRgbSplit').checked : false;
-  const rgbSplitAmt = $('rgbSplit') ? parseFloat($('rgbSplit').value) / 100 : 0;
+  const rgbSplitAmt = $('rgbSplit') ? pval('rgbSplit') / 100 : 0;
   const rgbDir      = $('rgbDir') ? $('rgbDir').value : 'horizontal';
   const rgbReact    = $('rgbReact') ? $('rgbReact').checked : true;
   const tgImage     = $('tgImage') ? $('tgImage').checked : false;
-  const mediaScale  = $('mediaScale') ? parseFloat($('mediaScale').value) / 100 : 1;
-  const mediaRot    = $('mediaRot') ? parseFloat($('mediaRot').value) : 0;
-  const mediaOpacity= $('mediaOpacity') ? parseFloat($('mediaOpacity').value) / 100 : 1;
+  const mediaScale  = $('mediaScale') ? pval('mediaScale') / 100 : 1;
+  const mediaRot    = $('mediaRot') ? pval('mediaRot') : 0;
+  const mediaOpacity= $('mediaOpacity') ? pval('mediaOpacity') / 100 : 1;
 
-  // ==========================================================
-  // Bass Keys — the new single source of truth for bass reactivity.
-  // Everything previously using `bass * sens` now uses the EQ-box fill.
-  // bassAdj is in [0, 1] where 1 = box fully filled by the spectrum peak.
-  // ==========================================================
-  const bassAdj = getKeysFillSmoothed(time);
-  // Mid/high/impulse keep their old per-band meaning for now, just without
-  // the old sens multiplier (which was an artifact of the old system)
+  // Mid/high/impulse keep their old per-band meaning
   const midAdj  = Math.min(1, mid);
   const highAdj = Math.min(1, high);
   const impulseAdj = Math.min(1, impulse);
@@ -3160,8 +3587,8 @@ function drawFrame(ctx, w, h, time, bass) {
         if ($('tgFlare1') && $('tgFlare1').checked) {
           drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare1'), {
             orientation: $('flare1Orient').value,
-            intensity: parseFloat($('flare1Int').value) / 100,
-            size: parseFloat($('flare1Size').value) / 100,
+            intensity: pval('flare1Int') / 100,
+            size: pval('flare1Size') / 100,
             bounce: $('cbBounce_flare1').checked,
             x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch,
           });
@@ -3171,8 +3598,8 @@ function drawFrame(ctx, w, h, time, bass) {
         if ($('tgFlare2') && $('tgFlare2').checked) {
           drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare2'), {
             orientation: $('flare2Orient').value,
-            intensity: parseFloat($('flare2Int').value) / 100,
-            size: parseFloat($('flare2Size').value) / 100,
+            intensity: pval('flare2Int') / 100,
+            size: pval('flare2Size') / 100,
             bounce: $('cbBounce_flare2').checked,
             x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch,
           });
@@ -3232,7 +3659,7 @@ function drawFrame(ctx, w, h, time, bass) {
   if ($('tgFade') && $('tgFade').checked) {
     const fadeInOn = $('fadeIn').checked;
     const fadeOutOn = $('fadeOut').checked;
-    const fadeDurSec = parseFloat($('fadeDur').value) / 10; // slider 1..100 → 0.1..10 s
+    const fadeDurSec = pval('fadeDur') / 10; // slider 1..100 → 0.1..10 s
     const dur = state.audioBuffer ? state.audioBuffer.duration : 0;
     let fadeAmt = 0;
     if (fadeInOn && fadeDurSec > 0 && time < fadeDurSec) {
@@ -3245,7 +3672,7 @@ function drawFrame(ctx, w, h, time, bass) {
     }
     if (fadeAmt > 0.001) {
       if ($('fadeBlurOn') && $('fadeBlurOn').checked) {
-        const blurPx = fadeAmt * (parseFloat($('fadeBlurStr').value) / 100) * 40;
+        const blurPx = fadeAmt * (pval('fadeBlurStr') / 100) * 40;
         if (blurPx > 0.3) {
           const sc = getScratch(w, h);
           sc.ctx.clearRect(0, 0, w, h);
@@ -6542,6 +6969,7 @@ function gatherPreset() {
     behind: { ...effectBehindLogo },
     colors2: {},
     mediaPos: { x: flarePos.image.x, y: flarePos.image.y },
+    automations: JSON.parse(JSON.stringify(automations)),
   };
   PRESET_COLOR_IDS.forEach(id => {
     const el = $(id);
@@ -6691,6 +7119,16 @@ function applyPreset(preset, silent) {
     if (typeof preset.mediaPos.y === 'number') flarePos.image.y = Math.max(0, Math.min(1, preset.mediaPos.y));
   }
 
+  // Automations (time keyframes / sound). Replace wholesale when present.
+  if (preset.automations && typeof preset.automations === 'object') {
+    Object.keys(automations).forEach(k => delete automations[k]);
+    Object.keys(preset.automations).forEach(k => {
+      const a = preset.automations[k];
+      if (a && (a.type === 'time' || a.type === 'sound')) automations[k] = a;
+    });
+    if (typeof refreshAutoButtons === 'function') refreshAutoButtons();
+  }
+
   // Back-compat: Camera Shake used to be an always-on built-in. If an older
   // preset doesn't know about it, keep it enabled so the look doesn't change.
   if (preset.effects && Array.isArray(preset.effects.added) &&
@@ -6807,6 +7245,7 @@ $('resetBtn').addEventListener('click', () => {
     },
     colors2: { fadeColor: '#000000' },
     mediaPos: { x: 0.5, y: 0.5 },
+    automations: {},
   };
   applyPreset(defaults);
 });

@@ -145,10 +145,10 @@ export default function PricingPage() {
             {showTrial && (
               <li>{TRIAL_DAYS}-day free trial &mdash; cancel before it ends, pay nothing</li>
             )}
-            <li>Unlimited rendering (1080p/60 &amp; 4K)</li>
-            <li>Shorts export (vertical 9:16)</li>
-            <li>No wait time</li>
-            <li>Cancel anytime</li>
+            <li>Lightning-fast rendering &mdash; full tracks export in moments</li>
+            <li>Auto-generate Shorts &amp; Reels in a click</li>
+            <li>Endlessly customizable &mdash; every effect in your control</li>
+            <li>Runs right in your browser &mdash; no other software needed</li>
           </ul>
 
           {!isLoaded ? (

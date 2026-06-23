@@ -1302,10 +1302,6 @@
             <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Brightens on bass</div>
           </div>
           <div class="field">
-            <label>BG Shake <span class="v" id="shakeV">50%</span></label>
-            <input type="range" id="shake" min="0" max="200" value="50" />
-          </div>
-          <div class="field">
             <label>Vignette Strength <span class="v" id="vigV">100%</span></label>
             <input type="range" id="vig" min="0" max="100" value="100" />
             <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Opens up on bass</div>
@@ -1482,6 +1478,65 @@
               <label class="cb"><input type="checkbox" id="cbBg_flare2"> Use Background Color</label>
               <input type="color" id="col_flare2" value="#7fc8ff">
             </div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="camerashake">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Camera Shake</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgCameraShake" checked hidden>
+            <div class="field"><label>Strength <span class="v" id="shakeV">50%</span></label><input type="range" id="shake" min="0" max="200" value="50" /></div>
+            <div class="field"><label>Motion Blur <span class="v" id="shakeBlurV">100%</span></label><input type="range" id="shakeBlur" min="0" max="200" value="100" /></div>
+            <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.4;">Bass-driven camera shake on the background.</div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="rgbsplit" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">RGB Split</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgRgbSplit" hidden>
+            <div class="field"><label>Split Strength <span class="v" id="rgbSplitV">40%</span></label><input type="range" id="rgbSplit" min="0" max="100" value="40" /></div>
+            <div class="field"><label>Direction</label>
+              <select id="rgbDir" class="fx-select">
+                <option value="horizontal" selected>Horizontal</option>
+                <option value="vertical">Vertical</option>
+              </select>
+            </div>
+            <label class="cb" style="margin-top:10px"><input type="checkbox" id="rgbReact" checked> React to bass</label>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="image" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Image / Video</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgImage" hidden>
+            <label class="drop" id="dropMedia" style="margin-bottom:10px">
+              <input type="file" id="mediaInput" accept="image/*,video/*" />
+              <div class="placeholder" id="mediaPlaceholder"><strong>Image or Video</strong>PNG, JPG, WebP, MP4, WebM</div>
+              <div class="filename" id="mediaName" style="display:none"></div>
+            </label>
+            <div class="field"><label>Scale <span class="v" id="mediaScaleV">100%</span></label><input type="range" id="mediaScale" min="5" max="400" value="100" /></div>
+            <div class="field"><label>Rotation <span class="v" id="mediaRotV">0°</span></label><input type="range" id="mediaRot" min="-180" max="180" value="0" /></div>
+            <div class="field"><label>Opacity <span class="v" id="mediaOpacityV">100%</span></label><input type="range" id="mediaOpacity" min="0" max="100" value="100" /></div>
+            <button type="button" class="fx-posbtn" id="btnPos_image">⊕ Set position — drag on preview</button>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="fade" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Fade</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgFade" hidden>
+            <div class="toggles" style="margin-bottom:10px">
+              <label><input type="checkbox" id="fadeIn" checked><span>Fade in (start)</span></label>
+              <label><input type="checkbox" id="fadeOut" checked><span>Fade out (end)</span></label>
+            </div>
+            <div class="field"><label>Duration <span class="v" id="fadeDurV">1.5 s</span></label><input type="range" id="fadeDur" min="1" max="100" value="15" /></div>
+            <div class="color-row">
+              <label class="cb"><input type="checkbox" id="fadeColorOn"> Custom fade color</label>
+              <input type="color" id="fadeColor" value="#000000" disabled>
+            </div>
+            <label class="cb" style="margin-top:10px"><input type="checkbox" id="fadeBlurOn"> Blur during fade</label>
+            <div class="field" style="margin-top:8px"><label>Blur Strength <span class="v" id="fadeBlurStrV">50%</span></label><input type="range" id="fadeBlurStr" min="0" max="100" value="50" /></div>
           </div>
         </div>
 
@@ -1853,6 +1908,65 @@ setupFileInput('fontInput', 'dropFont', 'fontPlaceholder', 'fontName', async (fi
 });
 
 // ============================================================
+// IMAGE / VIDEO SOURCE — for the Image/Video effect. Accepts an image or a
+// video; videos are seeked frame-exact during offline render.
+// ============================================================
+async function loadMedia(file) {
+  // Clean up any previous source
+  if (state.mediaUrl) { try { URL.revokeObjectURL(state.mediaUrl); } catch (e) {} state.mediaUrl = null; }
+  if (state.mediaVideo) { try { state.mediaVideo.pause(); } catch (e) {} state.mediaVideo = null; }
+  state.mediaEl = null; state.mediaType = null;
+
+  if (file.type.startsWith('video/')) {
+    const url = URL.createObjectURL(file);
+    state.mediaUrl = url;
+    const v = document.createElement('video');
+    v.src = url; v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+    await new Promise((res, rej) => {
+      let done = false;
+      const ok = () => { if (done) return; done = true; cleanup(); res(); };
+      const bad = () => { if (done) return; done = true; cleanup(); rej(new Error('video decode failed')); };
+      function cleanup() { v.removeEventListener('loadeddata', ok); v.removeEventListener('error', bad); }
+      v.addEventListener('loadeddata', ok);
+      v.addEventListener('error', bad);
+      setTimeout(ok, 8000); // safety
+    });
+    state.mediaVideo = v; state.mediaEl = v; state.mediaType = 'video';
+  } else if (file.type.startsWith('image/')) {
+    state.mediaEl = await loadImage(file); state.mediaType = 'image';
+  } else {
+    throw new Error('Unsupported file (use an image or video)');
+  }
+}
+
+(function setupMediaInput() {
+  const input = $('mediaInput');
+  const drop = $('dropMedia');
+  if (!input || !drop) return;
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.style.borderColor = 'var(--accent)'; });
+  drop.addEventListener('dragleave', () => { drop.style.borderColor = ''; });
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault(); drop.style.borderColor = '';
+    if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+  });
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      await loadMedia(file);
+      $('mediaPlaceholder').style.display = 'none';
+      const nameEl = $('mediaName'); nameEl.style.display = 'block'; nameEl.textContent = file.name;
+      drop.classList.add('has-file');
+      if (state.mediaVideo && state.isPlaying) { try { state.mediaVideo.play(); } catch (e2) {} }
+      redrawPreviewSafe();
+    } catch (err) {
+      console.error(err);
+      toast('Could not load media: ' + err.message, 'error');
+    }
+  });
+})();
+
+// ============================================================
 // PER-EFFECT COLOR
 // Each effect either uses the sampled background color (default) or a custom
 // color. Logo Glow uses the sampled logo color instead of the background.
@@ -1877,6 +1991,7 @@ const effectColors = {
 const flarePos = {
   flare1: { x: 0.5, y: 0.5 },
   flare2: { x: 0.5, y: 0.5 },
+  image:  { x: 0.5, y: 0.5 },
 };
 let flarePlacing = '';
 
@@ -1929,9 +2044,11 @@ async function analyzeLogoPalette(img) {
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
+  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
+  if (!el || !display) return;
   const update = () => {
     const v = el.value;
     if (id === 'crf') display.textContent = v;
@@ -1940,6 +2057,8 @@ async function analyzeLogoPalette(img) {
     else if (id === 'specBands' || id === 'partAmount') display.textContent = v;
     else if (id === 'specDur' || id === 'specOff') display.textContent = v + ' ms';
     else if (id === 'shortFadeIn' || id === 'shortFadeOut') display.textContent = parseFloat(v).toFixed(1) + ' s';
+    else if (id === 'fadeDur') display.textContent = (v / 10).toFixed(1) + ' s';
+    else if (id === 'mediaRot') display.textContent = v + '°';
     else display.textContent = v + '%';
   };
   el.addEventListener('input', () => {
@@ -1957,7 +2076,8 @@ async function analyzeLogoPalette(img) {
 
 // Toggle checkboxes — redraw preview on change
 ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
- 'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror'].forEach(id => {
+ 'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror',
+ 'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeBlurOn', 'rgbReact'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -1967,8 +2087,8 @@ async function analyzeLogoPalette(img) {
   });
 });
 
-// Particle origin / direction + flare orientation selects — redraw on change
-['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient'].forEach(id => {
+// Particle origin / direction + flare orientation + rgb direction — redraw
+['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -1977,6 +2097,16 @@ async function analyzeLogoPalette(img) {
     }
   });
 });
+
+// Fade custom-color toggle enables/disables its picker
+(function () {
+  const cb = $('fadeColorOn'), col = $('fadeColor');
+  if (!cb || !col) return;
+  const sync = () => { col.disabled = !cb.checked; redrawPreviewSafe(); };
+  cb.addEventListener('change', sync);
+  col.addEventListener('input', redrawPreviewSafe);
+  col.disabled = !cb.checked;
+})();
 
 // ============================================================
 // PER-EFFECT COLOR ROWS
@@ -2032,25 +2162,32 @@ const FX_TOGGLES = {
   ambient:   ['tgAmbient'],
   flare1:    ['tgFlare1'],
   flare2:    ['tgFlare2'],
+  camerashake: ['tgCameraShake'],
+  rgbsplit:  ['tgRgbSplit'],
+  image:     ['tgImage'],
+  fade:      ['tgFade'],
 };
 const FX_TITLES = {
   glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
   flare1: 'Optical Flare 1', flare2: 'Optical Flare 2',
+  camerashake: 'Camera Shake', rgbsplit: 'RGB Split', image: 'Image / Video', fade: 'Fade',
 };
-const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2'];
+const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2', 'camerashake', 'rgbsplit', 'image', 'fade'];
 
 // Canonical order in which effects are composed within each pass (behind/front
 // of the logo). drawFrame walks this twice — once for behind-logo effects, once
-// for the rest.
-const FX_RENDER_ORDER = ['ambient', 'glowbg', 'logoglow', 'shockwave', 'particles', 'flare1', 'flare2', 'spectrum', 'grain'];
+// for the rest. (Camera Shake and Fade are NOT here — they're applied specially:
+// shake modifies the frame transform up front, fade is the very last overlay.)
+const FX_RENDER_ORDER = ['ambient', 'glowbg', 'logoglow', 'shockwave', 'image', 'particles', 'flare1', 'flare2', 'spectrum', 'grain', 'rgbsplit'];
 
 // Per-effect "render behind the logo" flag (set via each effect's gear menu).
-// Defaults reproduce the original layering: ambient/glow/logoglow/shockwave sit
-// behind the logo, particles/flares/spectrum/grain in front.
+// Defaults reproduce the original layering. Only effects in FX_RENDER_ORDER use
+// this (the gear menu hides the option for the others).
 const effectBehindLogo = {
   ambient: true, glowbg: true, logoglow: true, shockwave: true,
   particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
+  image: false, rgbsplit: false,
 };
 
 function fxCard(fx) { return document.querySelector('.effect-card[data-effect="' + fx + '"]'); }
@@ -2162,8 +2299,11 @@ document.querySelectorAll('.effect-card').forEach(card => {
   const settings = document.createElement('div');
   settings.className = 'fx-settings';
   settings.style.display = 'none';
+  // "Move behind Logo" only applies to effects that are composed via the
+  // behind/front render passes; others just get the automation placeholder.
+  const supportsBehind = FX_RENDER_ORDER.indexOf(fx) !== -1;
   settings.innerHTML =
-    '<label class="cb"><input type="checkbox" class="fx-behind"> Move effect behind Logo</label>' +
+    (supportsBehind ? '<label class="cb"><input type="checkbox" class="fx-behind"> Move effect behind Logo</label>' : '') +
     '<button type="button" class="fx-automation" disabled title="Coming soon">+ Add automation</button>';
   body.insertBefore(settings, body.firstChild);
 
@@ -2903,6 +3043,18 @@ function drawFrame(ctx, w, h, time, bass) {
   const partMirror  = $('partMirror') ? $('partMirror').checked : false;
   const grainAmt    = parseFloat($('grainAmt').value) / 100;
 
+  // New modular effects
+  const tgCameraShake = $('tgCameraShake') ? $('tgCameraShake').checked : true;
+  const shakeBlurMul  = $('shakeBlur') ? parseFloat($('shakeBlur').value) / 100 : 1;
+  const tgRgbSplit  = $('tgRgbSplit') ? $('tgRgbSplit').checked : false;
+  const rgbSplitAmt = $('rgbSplit') ? parseFloat($('rgbSplit').value) / 100 : 0;
+  const rgbDir      = $('rgbDir') ? $('rgbDir').value : 'horizontal';
+  const rgbReact    = $('rgbReact') ? $('rgbReact').checked : true;
+  const tgImage     = $('tgImage') ? $('tgImage').checked : false;
+  const mediaScale  = $('mediaScale') ? parseFloat($('mediaScale').value) / 100 : 1;
+  const mediaRot    = $('mediaRot') ? parseFloat($('mediaRot').value) : 0;
+  const mediaOpacity= $('mediaOpacity') ? parseFloat($('mediaOpacity').value) / 100 : 1;
+
   // ==========================================================
   // Bass Keys — the new single source of truth for bass reactivity.
   // Everything previously using `bass * sens` now uses the EQ-box fill.
@@ -2915,9 +3067,8 @@ function drawFrame(ctx, w, h, time, bass) {
   const highAdj = Math.min(1, high);
   const impulseAdj = Math.min(1, impulse);
 
-  // Deterministic shake — BG ONLY. HALVED strength per user feedback.
-  // Scaled up to compensate for bassAdj now capping at 1.0 (was 1.5)
-  const shakeStrength = shakeAmtSlider * (bassAdj * 0.45 + impulseAdj * 1.2);
+  // Deterministic shake — BG ONLY. Gated by the Camera Shake effect.
+  const shakeStrength = (tgCameraShake ? shakeAmtSlider : 0) * (bassAdj * 0.45 + impulseAdj * 1.2);
   const shakeMax = h * 0.045 * shakeStrength;
   const shakeAngle1 = time * 37 + bassAdj * 8;
   const shakeAngle2 = time * 23 + impulseAdj * 12;
@@ -2930,7 +3081,7 @@ function drawFrame(ctx, w, h, time, bass) {
 
   // ========== LAYER 1: Background (shake + desat + darkness wash + motion blur) ==========
   if (state.bgImg) {
-    drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt, darkAmt, shakeX, shakeY, shakeStrength);
+    drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt, darkAmt, shakeX, shakeY, shakeStrength, shakeBlurMul);
   } else {
     const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h) * 0.7);
     grad.addColorStop(0, '#1a1a22');
@@ -3037,6 +3188,18 @@ function drawFrame(ctx, w, h, time, bass) {
           drawGrain(ctx, w, h, time, grainAmt * 0.35);
         }
         break;
+      case 'image':
+        if (tgImage && state.mediaEl) {
+          drawMediaLayer(ctx, w, h, state.mediaEl, mediaScale, mediaRot, flarePos.image.x, flarePos.image.y, mediaOpacity);
+        }
+        break;
+      case 'rgbsplit':
+        if (tgRgbSplit && rgbSplitAmt > 0.001) {
+          const amt = rgbSplitAmt * (rgbReact ? (0.5 + bassAdj * 0.9) : 1);
+          const px = Math.round(Math.min(w, h) * 0.03 * amt);
+          drawRgbSplit(ctx, w, h, rgbDir === 'vertical' ? 0 : px, rgbDir === 'vertical' ? px : 0);
+        }
+        break;
     }
   }
 
@@ -3064,16 +3227,39 @@ function drawFrame(ctx, w, h, time, bass) {
   // ========== Text overlays ==========
   drawText(ctx, w, h, bassAdj, highAdj);
 
-  // ========== LAYER 8: Intro fade-in (5s black → normal) ==========
-  // Covers everything including text. Uses smoothstep for a cinematic feel
-  // rather than a mechanical linear ramp.
-  const INTRO_FADE_SEC = 5;
-  if (time < INTRO_FADE_SEC) {
-    const p = time / INTRO_FADE_SEC;           // 0..1
-    const eased = p * p * (3 - 2 * p);          // smoothstep
-    const fadeAlpha = 1 - eased;                // 1 at t=0, 0 at t=5s
-    if (fadeAlpha > 0.001) {
-      ctx.fillStyle = `rgba(0,0,0,${fadeAlpha})`;
+  // ========== Fade effect (in/out + color + blur) — applied over everything ==========
+  // No longer on by default: the user adds the "Fade" effect to enable it.
+  if ($('tgFade') && $('tgFade').checked) {
+    const fadeInOn = $('fadeIn').checked;
+    const fadeOutOn = $('fadeOut').checked;
+    const fadeDurSec = parseFloat($('fadeDur').value) / 10; // slider 1..100 → 0.1..10 s
+    const dur = state.audioBuffer ? state.audioBuffer.duration : 0;
+    let fadeAmt = 0;
+    if (fadeInOn && fadeDurSec > 0 && time < fadeDurSec) {
+      const p = time / fadeDurSec;
+      fadeAmt = Math.max(fadeAmt, 1 - (p * p * (3 - 2 * p)));
+    }
+    if (fadeOutOn && fadeDurSec > 0 && dur > 0 && time > dur - fadeDurSec) {
+      const p = Math.min(1, (time - (dur - fadeDurSec)) / fadeDurSec);
+      fadeAmt = Math.max(fadeAmt, p * p * (3 - 2 * p));
+    }
+    if (fadeAmt > 0.001) {
+      if ($('fadeBlurOn') && $('fadeBlurOn').checked) {
+        const blurPx = fadeAmt * (parseFloat($('fadeBlurStr').value) / 100) * 40;
+        if (blurPx > 0.3) {
+          const sc = getScratch(w, h);
+          sc.ctx.clearRect(0, 0, w, h);
+          sc.ctx.drawImage(ctx.canvas, 0, 0);
+          ctx.save();
+          ctx.filter = `blur(${blurPx}px)`;
+          ctx.drawImage(sc.canvas, 0, 0);
+          ctx.filter = 'none';
+          ctx.restore();
+        }
+      }
+      const useCustom = $('fadeColorOn') && $('fadeColorOn').checked;
+      const fadeRgb = useCustom ? hexToRgb($('fadeColor').value) : [0, 0, 0];
+      ctx.fillStyle = rgba(fadeRgb, fadeAmt);
       ctx.fillRect(0, 0, w, h);
     }
   }
@@ -3100,7 +3286,8 @@ function drawFrame(ctx, w, h, time, bass) {
 // Uses composite-mode saturation for reliable desat across all browsers
 // (ctx.filter had inconsistent behavior on some pipelines)
 // ============================================================
-function drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt, darkAmt, shakeX, shakeY, shakeStrength) {
+function drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt, darkAmt, shakeX, shakeY, shakeStrength, motionBlurMul) {
+  motionBlurMul = (motionBlurMul == null || isNaN(motionBlurMul)) ? 1 : motionBlurMul;
   const bgScale = 1.08 + bassAdj * bgBounce * 0.21; // was 0.14 — compensate for bassAdj now maxing at 1.0
   const iw = imgW(state.bgImg);
   const ih = imgH(state.bgImg);
@@ -3117,15 +3304,16 @@ function drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt,
   const dx = (w - drawW) / 2;
   const dy = (h - drawH) / 2;
 
-  // Motion blur — up to 5 passes stacked along shake vector
-  const blurPasses = Math.max(1, Math.round(1 + shakeStrength * 4));
+  // Motion blur — up to 5 passes stacked along shake vector (scaled by the
+  // Camera Shake effect's Motion Blur control)
+  const blurPasses = Math.max(1, Math.round(1 + shakeStrength * 4 * motionBlurMul));
 
   ctx.save();
   if (blurPasses === 1) {
     ctx.translate(shakeX, shakeY);
     ctx.drawImage(state.bgImg, dx, dy, drawW, drawH);
   } else {
-    const blurSpan = shakeStrength * h * 0.06;
+    const blurSpan = shakeStrength * h * 0.06 * motionBlurMul;
     const shakeMag = Math.max(0.001, Math.hypot(shakeX, shakeY));
     const dirX = shakeX / shakeMag;
     const dirY = shakeY / shakeMag;
@@ -3780,6 +3968,91 @@ function drawLogoGlow(ctx, cx, cy, logoW, logoH, color, intensity, size, bassAdj
   ctx.restore();
 }
 
+// ============================================================
+// Cached offscreen canvases (for full-frame effects like RGB split & fade blur)
+// ============================================================
+const _scratchPool = {};
+function getScratch(w, h, key) {
+  key = key || 'a';
+  let s = _scratchPool[key];
+  if (!s) {
+    const canvas = document.createElement('canvas');
+    s = _scratchPool[key] = { canvas, ctx: canvas.getContext('2d') };
+  }
+  if (s.canvas.width !== w || s.canvas.height !== h) { s.canvas.width = w; s.canvas.height = h; }
+  return s;
+}
+
+// ============================================================
+// RGB SPLIT — full-frame channel separation. Copies the current frame, then
+// re-composes it additively with the R and B channels offset.
+// ============================================================
+function drawRgbSplit(ctx, w, h, dx, dy) {
+  if (!dx && !dy) return;
+  const A = getScratch(w, h, 'rgbA');
+  A.ctx.globalCompositeOperation = 'source-over';
+  A.ctx.clearRect(0, 0, w, h);
+  A.ctx.drawImage(ctx.canvas, 0, 0);
+  const B = getScratch(w, h, 'rgbB');
+  function channel(hex, ox, oy) {
+    B.ctx.globalCompositeOperation = 'source-over';
+    B.ctx.clearRect(0, 0, w, h);
+    B.ctx.drawImage(A.canvas, 0, 0);
+    B.ctx.globalCompositeOperation = 'multiply';
+    B.ctx.fillStyle = hex;
+    B.ctx.fillRect(0, 0, w, h);
+    B.ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(B.canvas, ox, oy);
+  }
+  ctx.save();
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'lighter';
+  channel('#ff0000', dx, dy);
+  channel('#00ff00', 0, 0);
+  channel('#0000ff', -dx, -dy);
+  ctx.restore();
+}
+
+// ============================================================
+// IMAGE / VIDEO layer — drawn with scale, rotation, position & opacity.
+// For videos, the current frame is drawn (seeked frame-exact during render).
+// ============================================================
+function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity) {
+  const iw = el.videoWidth || el.naturalWidth || el.width || 0;
+  const ih = el.videoHeight || el.naturalHeight || el.height || 0;
+  if (!iw || !ih) return;
+  const baseH = h * 0.5 * scale;     // 50% of frame height at scale=100%
+  const drawH = baseH;
+  const drawW = baseH * (iw / ih);
+  const px = posX * w, py = posY * h;
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
+  ctx.translate(px, py);
+  if (rotDeg) ctx.rotate(rotDeg * Math.PI / 180);
+  try { ctx.drawImage(el, -drawW / 2, -drawH / 2, drawW, drawH); } catch (e) {}
+  ctx.restore();
+}
+
+// Seek the Image/Video source to the right frame before an offline render frame.
+async function prepareMediaFrame(t) {
+  const v = state.mediaVideo;
+  if (!v || state.mediaType !== 'video') return;
+  if (!($('tgImage') && $('tgImage').checked)) return;
+  const dur = v.duration;
+  if (!dur || !isFinite(dur) || dur <= 0) return;
+  let vt = t % dur;
+  if (vt < 0) vt += dur;
+  if (Math.abs(v.currentTime - vt) < 0.002) return;
+  await new Promise((res) => {
+    let done = false;
+    const on = () => { if (done) return; done = true; v.removeEventListener('seeked', on); res(); };
+    v.addEventListener('seeked', on);
+    try { v.currentTime = vt; } catch (e) { done = true; v.removeEventListener('seeked', on); res(); }
+    setTimeout(on, 250); // safety timeout so a stuck seek never hangs the render
+  });
+}
+
 function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction, amount, sizeMul, glowMul, opacityMul, speedMul, mirror) {
   if (effectsAmt < 0.01 || !onsets || onsets.length === 0) return;
 
@@ -4123,7 +4396,8 @@ function drawFlarePlacingGuide() {
   const fs = Math.max(9, Math.round(h * 0.025));
   ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  ctx.fillText(flarePlacing === 'flare1' ? 'FLARE 1' : 'FLARE 2', px, py - r * 1.6);
+  const lbl = flarePlacing === 'flare1' ? 'FLARE 1' : flarePlacing === 'flare2' ? 'FLARE 2' : 'IMAGE';
+  ctx.fillText(lbl, px, py - r * 1.6);
   ctx.restore();
 }
 
@@ -4185,6 +4459,15 @@ function play() {
   state.startTime = state.audioContext.currentTime;
   state.isPlaying = true;
 
+  // Sync the Image/Video source (if a video) to the playhead and let it run.
+  if (state.mediaVideo) {
+    try {
+      const dur = state.mediaVideo.duration;
+      if (dur && isFinite(dur)) state.mediaVideo.currentTime = state.pauseOffset % dur;
+      state.mediaVideo.play().catch(() => {});
+    } catch (e) {}
+  }
+
   state.source.onended = () => {
     if (state.isPlaying) {
       stop();
@@ -4202,6 +4485,7 @@ function pause() {
   state.source.onended = null;
   state.source.stop();
   state.isPlaying = false;
+  if (state.mediaVideo) { try { state.mediaVideo.pause(); } catch (e) {} }
   $('playBtn').innerHTML = '<span class="ico play"></span><span>Play</span>';
   setStatus('Paused', 'ready');
   cancelAnimationFrame(state.rafId);
@@ -4214,6 +4498,7 @@ function stop() {
   }
   state.pauseOffset = 0;
   state.isPlaying = false;
+  if (state.mediaVideo) { try { state.mediaVideo.pause(); state.mediaVideo.currentTime = 0; } catch (e) {} }
   $('playBtn').innerHTML = '<span class="ico play"></span><span>Play</span>';
   setStatus('Ready', 'ready');
   cancelAnimationFrame(state.rafId);
@@ -4359,16 +4644,17 @@ fxMarkerHit.addEventListener('touchstart', startMarkerDrag, { passive: false });
 // Toggle a flare's "Set position" button, then click/drag anywhere on the
 // preview to move that flare. Position is stored normalized (0..1).
 // ============================================================
+const PLACEABLE = ['flare1', 'flare2', 'image'];
 function setFlarePlacing(id) {
   flarePlacing = (flarePlacing === id) ? '' : id;
-  ['flare1', 'flare2'].forEach(f => {
+  PLACEABLE.forEach(f => {
     const b = $('btnPos_' + f);
     if (b) b.classList.toggle('active', flarePlacing === f);
   });
   previewCanvas.classList.toggle('flare-placing', !!flarePlacing);
   if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
 }
-['flare1', 'flare2'].forEach(id => {
+PLACEABLE.forEach(id => {
   const b = $('btnPos_' + id);
   if (b) b.addEventListener('click', () => setFlarePlacing(id));
 });
@@ -5215,6 +5501,7 @@ async function renderWithMp4Muxer(opts) {
     for (let f = 0; f < totalFrames; f++) {
       if (state.cancelRender) throw new Error('Cancelled');
       const t = videoStartTime + f / fps;
+      await prepareMediaFrame(t);
       drawFrame(renderCtx, W, H, t, 0);
       const keyFrame = (f % (fps * 2)) === 0;
       const frame = new VideoFrame(renderCanvas, {
@@ -5392,6 +5679,7 @@ async function renderWithWebmMuxer(opts) {
     for (let f = 0; f < totalFrames; f++) {
       if (state.cancelRender) throw new Error('Cancelled');
       const t = videoStartTime + f / fps;
+      await prepareMediaFrame(t);
       drawFrame(renderCtx, W, H, t, 0);
       const keyFrame = (f % (fps * 2)) === 0;
       const frame = new VideoFrame(renderCanvas, {
@@ -5620,6 +5908,11 @@ async function renderWithMediaRecorder(opts, containerPref) {
   drawFrame(renderCtx, W, H, videoStartTime, 0);
   grabFrame();
 
+  // Real-time path can't seek per frame — just let a video source play along.
+  if (state.mediaVideo && state.mediaType === 'video' && $('tgImage') && $('tgImage').checked) {
+    try { state.mediaVideo.currentTime = videoStartTime % (state.mediaVideo.duration || 1); state.mediaVideo.play().catch(() => {}); } catch (e) {}
+  }
+
   // Start audio FIRST so samples are flowing before MediaRecorder snaps to the stream.
   // Then small delay to let the audio pipeline prime, then start recorder.
   audioSrc.start(0);
@@ -5831,6 +6124,7 @@ async function startRender() {
     setStatus('Ready', 'ready');
     state.exportHandle = null;
     state.exportName = null;
+    if (state.mediaVideo && !state.isPlaying) { try { state.mediaVideo.pause(); } catch (e) {} }
   }
 }
 
@@ -6214,10 +6508,13 @@ const PRESET_SLIDER_IDS = [
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
+  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
 ];
 const PRESET_TEXT_IDS = ['topText', 'botText'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
+  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact'];
+const PRESET_COLOR_IDS = ['fadeColor'];
 
 function gatherEffects() {
   const colors = {};
@@ -6243,7 +6540,13 @@ function gatherPreset() {
       flare2: { x: flarePos.flare2.x, y: flarePos.flare2.y, bounce: !!($('cbBounce_flare2') && $('cbBounce_flare2').checked) },
     },
     behind: { ...effectBehindLogo },
+    colors2: {},
+    mediaPos: { x: flarePos.image.x, y: flarePos.image.y },
   };
+  PRESET_COLOR_IDS.forEach(id => {
+    const el = $(id);
+    if (el) preset.colors2[id] = el.value;
+  });
   PRESET_SLIDER_IDS.forEach(id => {
     const el = $(id);
     if (el) preset.sliders[id] = el.value;
@@ -6375,6 +6678,27 @@ function applyPreset(preset, silent) {
   }
   if (typeof syncBehindCheckboxes === 'function') syncBehindCheckboxes();
 
+  // Extra color pickers (fade color) + image position
+  if (preset.colors2) {
+    for (const id in preset.colors2) {
+      const el = $(id);
+      if (el) el.value = preset.colors2[id];
+    }
+  }
+  if ($('fadeColorOn') && $('fadeColor')) $('fadeColor').disabled = !$('fadeColorOn').checked;
+  if (preset.mediaPos) {
+    if (typeof preset.mediaPos.x === 'number') flarePos.image.x = Math.max(0, Math.min(1, preset.mediaPos.x));
+    if (typeof preset.mediaPos.y === 'number') flarePos.image.y = Math.max(0, Math.min(1, preset.mediaPos.y));
+  }
+
+  // Back-compat: Camera Shake used to be an always-on built-in. If an older
+  // preset doesn't know about it, keep it enabled so the look doesn't change.
+  if (preset.effects && Array.isArray(preset.effects.added) &&
+      preset.toggles && preset.toggles.tgCameraShake === undefined &&
+      preset.effects.added.indexOf('camerashake') === -1) {
+    preset.effects.added.push('camerashake');
+  }
+
   // Modular effects: which cards are active + per-effect colors
   applyEffects(preset.effects);
 
@@ -6439,12 +6763,14 @@ $('resetBtn').addEventListener('click', () => {
       grainAmt: '50',
       partAmount: '24', partSize: '100', partGlow: '100', partOpacity: '100', partSpeed: '100',
       flare1Int: '100', flare1Size: '100', flare2Int: '100', flare2Size: '100',
+      shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100',
+      fadeDur: '15', fadeBlurStr: '50',
     },
     text: { topText: '', botText: '' },
     selects: {
       fontStyle: 'cormorant', resolution: '1080', framerate: '60',
       partOrigin: 'middle', partDirection: 'center',
-      flare1Orient: 'horizontal', flare2Orient: 'vertical',
+      flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal',
     },
     toggles: {
       tgShockwave: true, tgParticles: true,
@@ -6453,10 +6779,12 @@ $('resetBtn').addEventListener('click', () => {
       tgGlowBg: true, tgLogoGlow: false,
       tgFlare1: false, tgFlare2: false,
       partMirror: false,
+      tgCameraShake: true, tgRgbSplit: false, tgImage: false, tgFade: false,
+      fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
     effects: {
-      added: ['glowbg', 'shockwave', 'particles', 'spectrum', 'grain', 'ambient'],
+      added: ['glowbg', 'shockwave', 'particles', 'spectrum', 'grain', 'ambient', 'camerashake'],
       colors: {
         glowbg: { useBg: true, hex: '#ff8c3c' },
         shockwave: { useBg: true, hex: '#ff8c3c' },
@@ -6475,7 +6803,10 @@ $('resetBtn').addEventListener('click', () => {
     behind: {
       ambient: true, glowbg: true, logoglow: true, shockwave: true,
       particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
+      image: false, rgbsplit: false,
     },
+    colors2: { fadeColor: '#000000' },
+    mediaPos: { x: 0.5, y: 0.5 },
   };
   applyPreset(defaults);
 });

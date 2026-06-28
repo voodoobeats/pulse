@@ -1314,6 +1314,7 @@
   <!-- TAB NAV (mobile only) -->
   <div class="tab-nav" id="tabNav">
     <button class="active" data-tab="sources">Sources</button>
+    <button data-tab="presets">Presets</button>
     <button data-tab="keys">Keys</button>
     <button data-tab="motion">Effects</button>
     <button data-tab="export">Export</button>
@@ -7396,6 +7397,11 @@ tabButtons.forEach(btn => {
     const target = btn.dataset.tab;
     tabButtons.forEach(b => b.classList.toggle('active', b === btn));
     sectionEls.forEach(s => s.classList.toggle('active', s.dataset.section === target));
+    // Reset the panel scroll — otherwise switching from a long section (e.g.
+    // Effects) to a short one leaves the panel scrolled past the new content,
+    // so the tab looks empty until you scroll up.
+    const sb = document.querySelector('.sidebar');
+    if (sb) sb.scrollTop = 0;
     // Resize preview after layout change since the viewport area might shift
     requestAnimationFrame(() => {
       resizePreview();

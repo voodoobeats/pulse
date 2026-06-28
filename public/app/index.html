@@ -808,6 +808,10 @@
   .auto-actions .right { display: flex; gap: 10px; margin-left: auto; }
   .auto-card select.auto-switch { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font-size: 12px; margin-bottom: 12px; }
   .auto-hint { font-size: 11px; color: var(--ink-faint); margin-top: 10px; line-height: 1.5; }
+  .auto-scrub { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .auto-scrub input[type="range"] { flex: 1; }
+  .auto-scrub .btn { padding: 6px 10px; font-size: 11px; }
+  .auto-scrub .num { width: 56px; text-align: right; font-size: 12px; color: var(--accent); }
   .render-overlay .label {
     font-family: 'Fraunces', serif;
     font-style: italic;
@@ -1175,9 +1179,10 @@
     background: var(--panel); color: var(--ink); font-size: 12px;
   }
   .fx-posbtn {
-    width: 100%; margin-top: 10px; padding: 9px 10px; border-radius: 8px;
+    display: block; width: 100%; margin-top: 16px; padding: 10px 12px; border-radius: 8px;
     border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-dim);
     cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.12s ease;
+    text-align: center;
   }
   .fx-posbtn:hover { border-color: var(--accent); color: var(--ink); }
   .fx-posbtn.active {
@@ -1312,7 +1317,7 @@
       <div class="fx-stack" id="fxStack">
 
         <div class="effect-card" data-effect="background">
-          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Background</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Background Image</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
             <input type="checkbox" id="tgBackground" checked hidden>
             <label class="drop" id="dropBg" style="margin-bottom:10px">
@@ -1337,6 +1342,27 @@
             </label>
             <div class="field"><label>Logo Size <span class="v" id="logoSizeV">110%</span></label><input type="range" id="logoSize" min="30" max="200" value="110" /></div>
             <div class="field"><label>Logo Bounce <span class="v" id="logoBounceV">100%</span></label><input type="range" id="logoBounce" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Blend Mode</label>
+              <select id="logoBlend" class="fx-select">
+                <option value="source-over" selected>Normal</option>
+                <option value="multiply">Multiply</option>
+                <option value="screen">Screen</option>
+                <option value="overlay">Overlay</option>
+                <option value="darken">Darken</option>
+                <option value="lighten">Lighten</option>
+                <option value="color-dodge">Color Dodge</option>
+                <option value="color-burn">Color Burn</option>
+                <option value="hard-light">Hard Light</option>
+                <option value="soft-light">Soft Light</option>
+                <option value="difference">Difference</option>
+                <option value="exclusion">Exclusion</option>
+                <option value="hue">Hue</option>
+                <option value="saturation">Saturation</option>
+                <option value="color">Color</option>
+                <option value="luminosity">Luminosity</option>
+                <option value="lighter">Add (Linear Dodge)</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1574,6 +1600,16 @@
               </select>
             </div>
             <label class="cb" style="margin-top:10px"><input type="checkbox" id="rgbReact" checked> React to bass</label>
+            <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.4; margin-top: 8px;">Splits everything below this layer.</div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="blur" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Blur</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgBlur" hidden>
+            <div class="field"><label>Blur Strength <span class="v" id="blurStrV">40%</span></label><input type="range" id="blurStr" min="0" max="100" value="40" /></div>
+            <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.4;">Blurs everything below this layer. Move it up/down to choose what gets blurred.</div>
           </div>
         </div>
 
@@ -1589,6 +1625,27 @@
             <div class="field"><label>Scale <span class="v" id="mediaScaleV">100%</span></label><input type="range" id="mediaScale" min="5" max="400" value="100" /></div>
             <div class="field"><label>Rotation <span class="v" id="mediaRotV">0°</span></label><input type="range" id="mediaRot" min="-180" max="180" value="0" /></div>
             <div class="field"><label>Opacity <span class="v" id="mediaOpacityV">100%</span></label><input type="range" id="mediaOpacity" min="0" max="100" value="100" /></div>
+            <div class="field"><label>Blend Mode</label>
+              <select id="mediaBlend" class="fx-select">
+                <option value="source-over" selected>Normal</option>
+                <option value="multiply">Multiply</option>
+                <option value="screen">Screen</option>
+                <option value="overlay">Overlay</option>
+                <option value="darken">Darken</option>
+                <option value="lighten">Lighten</option>
+                <option value="color-dodge">Color Dodge</option>
+                <option value="color-burn">Color Burn</option>
+                <option value="hard-light">Hard Light</option>
+                <option value="soft-light">Soft Light</option>
+                <option value="difference">Difference</option>
+                <option value="exclusion">Exclusion</option>
+                <option value="hue">Hue</option>
+                <option value="saturation">Saturation</option>
+                <option value="color">Color</option>
+                <option value="luminosity">Luminosity</option>
+                <option value="lighter">Add (Linear Dodge)</option>
+              </select>
+            </div>
             <button type="button" class="fx-posbtn" id="btnPos_image">⊕ Set position — drag on preview</button>
           </div>
         </div>
@@ -1653,6 +1710,10 @@
       <div class="field">
         <div class="toggles"><label><input type="checkbox" id="frameByFrame" checked><span>Frame-by-frame rendering</span></label></div>
         <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Renders every frame exactly (no real-time capture) — recommended. Uncheck to allow the legacy real-time recorder as a fallback if your browser can't render offline.</div>
+      </div>
+      <div class="field">
+        <div class="toggles"><label><input type="checkbox" id="convertMp4"><span>Convert WebM output to MP4</span></label></div>
+        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Only relevant on browsers that export WebM (e.g. Firefox). Re-encodes to MP4 in your browser — accurate but <strong>slow</strong>. Leave off for the fastest export; WebM plays everywhere and imports into editors &amp; social uploads.</div>
       </div>
 
       <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
@@ -2123,7 +2184,7 @@ async function analyzeLogoPalette(img) {
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
-  'textSize', 'textRot',
+  'textSize', 'textRot', 'blurStr',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
@@ -2157,7 +2218,7 @@ async function analyzeLogoPalette(img) {
 ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
  'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror',
  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeBlurOn', 'rgbReact',
- 'tgBackground', 'tgLogo', 'tgVignette', 'tgText'].forEach(id => {
+ 'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2168,7 +2229,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Particle origin / direction + flare orientation + rgb direction — redraw
-['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign'].forEach(id => {
+['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2250,20 +2311,21 @@ const FX_TOGGLES = {
   logo:      ['tgLogo'],
   vignette:  ['tgVignette'],
   text:      ['tgText'],
+  blur:      ['tgBlur'],
 };
 const FX_TITLES = {
   glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
   flare1: 'Optical Flare 1', flare2: 'Optical Flare 2',
   camerashake: 'Camera Shake', rgbsplit: 'RGB Split', image: 'Image / Video', fade: 'Fade',
-  background: 'Background', logo: 'Logo', vignette: 'Vignette', text: 'Text',
+  background: 'Background Image', logo: 'Logo', vignette: 'Vignette', text: 'Text', blur: 'Blur',
 };
-const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2', 'camerashake', 'rgbsplit', 'image', 'vignette', 'text', 'fade'];
+const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
 
 // LAYER ORDER — a single stack the user can reorder by drag & drop. Read top to
 // bottom = back to front (top card drawn first, bottom drawn last/on top). The
 // Background effect is always forced to the very back regardless of its slot.
-const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flare1', 'flare2', 'spectrum', 'grain', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
+const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flare1', 'flare2', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
 let fxOrder = DEFAULT_FX_ORDER.slice();
 function rebuildFxOrder() {
   const stack = $('fxStack');
@@ -2300,7 +2362,7 @@ const AUTOMATABLE = [
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
-  'textSize', 'textRot',
+  'textSize', 'textRot', 'blurStr',
 ];
 let __autoTime = 0;   // current frame time (seconds) — set at the top of drawFrame
 let __autoBass = 0;   // current bass-keys fill (0..1) — set at the top of drawFrame
@@ -2667,11 +2729,18 @@ function openTimeEditor(id) {
   _graphId = id; _graphSel = -1;
   const others = timeAutomatedIds();
   const opts = others.map(o => '<option value="' + o + '"' + (o === id ? ' selected' : '') + '>' + paramLabelText(o) + '</option>').join('');
+  const dur = graphDur();
   const card = openAutoHtml(
     '<h3>Time automation</h3>' +
     '<select class="auto-switch" id="grSwitch">' + opts + '</select>' +
     '<canvas class="auto-graph" id="grCanvas"></canvas>' +
-    '<p class="auto-hint">Click on the graph to add a keyframe; drag a point to move it; double-click a point to delete it. The vertical line is the current playhead.</p>' +
+    '<div class="auto-scrub">' +
+      '<button class="btn" id="grBack" title="Step back 0.1s">◀</button>' +
+      '<input type="range" id="grPlayhead" min="0" max="' + dur.toFixed(3) + '" step="0.01" value="' + Math.min(dur, getCurrentTime()).toFixed(3) + '">' +
+      '<button class="btn" id="grFwd" title="Step forward 0.1s">▶</button>' +
+      '<span class="num" id="grTime">' + formatTime(getCurrentTime()) + '</span>' +
+    '</div>' +
+    '<p class="auto-hint">Drag the playhead above to preview any moment and check your keyframes. On the graph: click to add a keyframe, drag a point to move it, double-click to delete.</p>' +
     '<div class="auto-actions">' +
       '<button class="btn danger" id="grRemove">Remove automation</button>' +
       '<div class="right">' +
@@ -2686,6 +2755,19 @@ function openTimeEditor(id) {
   card.querySelector('#grRemove').addEventListener('click', () => { removeAutomation(id); closeAuto(); });
   card.querySelector('#grAdd').addEventListener('click', () => addKeyframeAtPlayhead(id));
   card.querySelector('#grDel').addEventListener('click', () => deleteSelectedKey());
+
+  const ph = card.querySelector('#grPlayhead');
+  const phTime = card.querySelector('#grTime');
+  function syncPlayhead() {
+    const t = parseFloat(ph.value);
+    setPlayheadTime(t);
+    phTime.textContent = formatTime(t);
+    drawAutoGraph();
+  }
+  ph.addEventListener('input', syncPlayhead);
+  card.querySelector('#grBack').addEventListener('click', () => { ph.value = Math.max(0, parseFloat(ph.value) - 0.1); syncPlayhead(); });
+  card.querySelector('#grFwd').addEventListener('click', () => { ph.value = Math.min(graphDur(), parseFloat(ph.value) + 0.1); syncPlayhead(); });
+
   attachGraph(card.querySelector('#grCanvas'));
 }
 
@@ -3617,12 +3699,15 @@ function drawFrame(ctx, w, h, time, bass) {
   const mediaScale  = $('mediaScale') ? pval('mediaScale') / 100 : 1;
   const mediaRot    = $('mediaRot') ? pval('mediaRot') : 0;
   const mediaOpacity= $('mediaOpacity') ? pval('mediaOpacity') / 100 : 1;
+  const mediaBlend  = $('mediaBlend') ? $('mediaBlend').value : 'source-over';
+  const logoBlend   = $('logoBlend') ? $('logoBlend').value : 'source-over';
   // Logo / Background / Vignette / Text / Fade are now effects too
   const tgBackground = $('tgBackground') ? $('tgBackground').checked : false;
   const tgLogo       = $('tgLogo') ? $('tgLogo').checked : false;
   const tgVignette   = $('tgVignette') ? $('tgVignette').checked : false;
   const tgText       = $('tgText') ? $('tgText').checked : false;
   const tgFade       = $('tgFade') ? $('tgFade').checked : false;
+  const tgBlur       = $('tgBlur') ? $('tgBlur').checked : false;
 
   // Mid/high/impulse keep their old per-band meaning
   const midAdj  = Math.min(1, mid);
@@ -3747,7 +3832,7 @@ function drawFrame(ctx, w, h, time, bass) {
         break;
       case 'image':
         if (tgImage && state.mediaEl) {
-          drawMediaLayer(ctx, w, h, state.mediaEl, mediaScale, mediaRot, flarePos.image.x, flarePos.image.y, mediaOpacity);
+          drawMediaLayer(ctx, w, h, state.mediaEl, mediaScale, mediaRot, flarePos.image.x, flarePos.image.y, mediaOpacity, mediaBlend);
         }
         break;
       case 'rgbsplit':
@@ -3764,7 +3849,10 @@ function drawFrame(ctx, w, h, time, bass) {
         break;
       case 'logo':
         if (tgLogo && state.logoImg) {
+          ctx.save();
+          ctx.globalCompositeOperation = logoBlend;
           drawLogoWithAberration(ctx, cx, cy, logoW, logoH, impulseAdj, effectsAmt, glowColor);
+          ctx.restore();
         }
         break;
       case 'vignette':
@@ -3781,6 +3869,9 @@ function drawFrame(ctx, w, h, time, bass) {
         break;
       case 'text':
         if (tgText) drawTextEffect(ctx, w, h, bassAdj, highAdj);
+        break;
+      case 'blur':
+        if (tgBlur) drawBlurLayer(ctx, w, h, (pval('blurStr') / 100) * 40);
         break;
       case 'fade':
         if (tgFade) drawFadeEffect(ctx, w, h, time);
@@ -4544,10 +4635,25 @@ function drawRgbSplit(ctx, w, h, dx, dy) {
 }
 
 // ============================================================
+// BLUR — gaussian blur of everything drawn so far (i.e. layers below this one).
+// ============================================================
+function drawBlurLayer(ctx, w, h, blurPx) {
+  if (!blurPx || blurPx < 0.3) return;
+  const sc = getScratch(w, h, 'blur');
+  sc.ctx.clearRect(0, 0, w, h);
+  sc.ctx.drawImage(ctx.canvas, 0, 0);
+  ctx.save();
+  ctx.filter = `blur(${blurPx}px)`;
+  ctx.drawImage(sc.canvas, 0, 0);
+  ctx.filter = 'none';
+  ctx.restore();
+}
+
+// ============================================================
 // IMAGE / VIDEO layer — drawn with scale, rotation, position & opacity.
 // For videos, the current frame is drawn (seeked frame-exact during render).
 // ============================================================
-function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity) {
+function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity, blend) {
   const iw = el.videoWidth || el.naturalWidth || el.width || 0;
   const ih = el.videoHeight || el.naturalHeight || el.height || 0;
   if (!iw || !ih) return;
@@ -4556,6 +4662,7 @@ function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity) {
   const drawW = baseH * (iw / ih);
   const px = posX * w, py = posY * h;
   ctx.save();
+  if (blend) ctx.globalCompositeOperation = blend;
   ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
   ctx.translate(px, py);
   if (rotDeg) ctx.rotate(rotDeg * Math.PI / 180);
@@ -5218,6 +5325,22 @@ const fxDim = $('fxDim');
 
 // Current drag state — when user is dragging the FX marker, we suppress scrubber clicks
 let fxMarkerDragging = false;
+
+// Move the playhead to a given time (seek). Shared by the scrubber and the
+// automation editor's mini-scrubber.
+function setPlayheadTime(t) {
+  if (!state.audioBuffer) return;
+  const wasPlaying = state.isPlaying;
+  if (wasPlaying) pause();
+  state.pauseOffset = Math.max(0, Math.min(state.audioBuffer.duration - 0.01, t));
+  if (wasPlaying) play();
+  else {
+    drawPreviewFrame(state.pauseOffset, getCurrentBass());
+    const pctOut = (state.pauseOffset / state.audioBuffer.duration) * 100;
+    $('progress').style.width = pctOut + '%';
+    $('timecode').innerHTML = formatTime(state.pauseOffset) + '<span class="dim"> / ' + formatTime(state.audioBuffer.duration) + '</span>';
+  }
+}
 
 scrubber.addEventListener('click', (e) => {
   if (!state.audioBuffer) return;
@@ -6623,32 +6746,30 @@ async function renderWithMediaRecorder(opts, containerPref) {
 // Orchestrator: try each renderer in order, fall back on failure.
 // ============================================================
 async function tryRenderers(opts) {
-  // Safari's WebCodecs AAC encoder is known not to emit decoderConfig metadata,
-  // which causes mp4-muxer to write an unplayable audio track. On Safari we
-  // prefer MediaRecorder MP4 first because it goes through QuickTime's encoder
-  // which produces a valid file with audio. Other browsers get the offline
-  // WebCodecs path first because it's much faster.
+  // Strategy: WebCodecs everywhere — it's GPU-accelerated, frame-exact and FAST
+  // in every modern browser. The only difference is the container:
+  //   • H.264 + AAC → MP4  (Chrome, Edge, Safari 26+)
+  //   • VP9  + Opus → WebM  (Firefox — no AAC encoder, so MP4 isn't native)
+  // Firefox therefore renders just as fast; it simply outputs .webm. MP4 for
+  // Firefox is optional (a post-render ffmpeg transcode the user can opt into).
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  const webcodecs = { name: 'WebCodecs MP4 (offline)', safe: true,  fn: () => renderWithMp4Muxer(opts) };
-  // Firefox can't emit MP4/AAC from WebCodecs or MediaRecorder, so its only
-  // option used to be laggy real-time WebM capture. Instead we encode a
-  // frame-exact offline WebM (VP9 + Opus) and transcode it to true MP4 with
-  // ffmpeg.wasm — smooth output, no dropped frames.
-  const webmOfflineMp4 = { name: 'WebCodecs WebM → MP4 (offline)', safe: true, fn: () => renderWebmOfflineThenMp4(opts) };
-  const mrMp4    = { name: 'MediaRecorder MP4 (real-time)',  safe: false, fn: () => renderWithMediaRecorder(opts, 'mp4') };
-  const mrWebm   = { name: 'MediaRecorder WebM (real-time)', safe: false, fn: () => renderWithMediaRecorder(opts, 'webm') };
+  const webcodecs = { name: 'WebCodecs MP4 (H.264/AAC)', safe: true, fn: () => renderWithMp4Muxer(opts) };
+  const webmOffline = {
+    name: 'WebCodecs WebM (VP9/Opus)', safe: true,
+    fn: async () => { const blob = await renderWithWebmMuxer(opts); return { blob, ext: 'webm', mime: 'video/webm' }; },
+  };
+  const mrMp4  = { name: 'MediaRecorder MP4 (real-time)',  safe: false, fn: () => renderWithMediaRecorder(opts, 'mp4') };
+  const mrWebm = { name: 'MediaRecorder WebM (real-time)', safe: false, fn: () => renderWithMediaRecorder(opts, 'webm') };
 
-  // Frame-by-frame mode (default): only the frame-exact OFFLINE engines — never
-  // the real-time recorder. This is what keeps "every frame exact" and stops
-  // Safari from silently falling back to a real-time screen capture.
-  // Unchecked: legacy chain with real-time capture as a fallback.
+  // Frame-by-frame mode (default): only the frame-exact OFFLINE WebCodecs
+  // engines — never the real-time recorder. Unchecked: add real-time fallbacks.
   const frameByFrame = $('frameByFrame') ? $('frameByFrame').checked : true;
   const renderers = frameByFrame
-    ? [webcodecs, webmOfflineMp4]
+    ? [webcodecs, webmOffline]
     : (isSafari
-        ? [mrMp4, webcodecs, webmOfflineMp4, mrWebm]
-        : [webcodecs, webmOfflineMp4, mrMp4, mrWebm]);
+        ? [webcodecs, mrMp4, webmOffline, mrWebm]
+        : [webcodecs, webmOffline, mrMp4, mrWebm]);
 
   const info = $('renderRendererInfo');
   const failures = [];
@@ -6740,6 +6861,19 @@ async function startRender() {
     const result = await tryRenderers(opts);
 
     if (state.cancelRender) throw new Error('Cancelled');
+
+    // Optional, opt-in WebM → MP4 conversion (slow). Only runs when the engine
+    // produced WebM and the user ticked "Convert WebM output to MP4".
+    if (result.ext === 'webm' && $('convertMp4') && $('convertMp4').checked) {
+      try {
+        const mp4Blob = await transcodeWebmToMp4(result.blob, opts);
+        result.blob = mp4Blob; result.ext = 'mp4'; result.mime = 'video/mp4';
+      } catch (e) {
+        if (e && e.message === 'Cancelled') throw e;
+        console.warn('MP4 conversion failed, keeping WebM:', e);
+        toast('MP4 conversion failed — kept the WebM file', 'error');
+      }
+    }
 
     // Save — use the file name (and, where supported, the save location) the
     // user picked in the pre-export dialog. Falls back to a normal download.
@@ -7175,13 +7309,13 @@ const PRESET_SLIDER_IDS = [
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
-  'textSize', 'textRot',
+  'textSize', 'textRot', 'blurStr',
 ];
 const PRESET_TEXT_IDS = ['textContent'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend'];
 const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
-  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame',
-  'tgBackground', 'tgLogo', 'tgVignette', 'tgText'];
+  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame', 'convertMp4',
+  'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'];
 const PRESET_COLOR_IDS = ['fadeColor', 'textColor'];
 
 function gatherEffects() {
@@ -7454,14 +7588,14 @@ function getDefaultPreset() {
       flare1Int: '100', flare1Size: '100', flare2Int: '100', flare2Size: '100',
       shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100',
       fadeDur: '15', fadeBlurStr: '50',
-      textSize: '100', textRot: '0',
+      textSize: '100', textRot: '0', blurStr: '40',
     },
     text: { textContent: '' },
     selects: {
       fontStyle: 'cormorant', resolution: '1080', framerate: '60',
       partOrigin: 'middle', partDirection: 'center',
       flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal', partMode: 'burst',
-      textAlign: 'center',
+      textAlign: 'center', logoBlend: 'source-over', mediaBlend: 'source-over',
     },
     toggles: {
       tgShockwave: false, tgParticles: false,
@@ -7472,8 +7606,8 @@ function getDefaultPreset() {
       partMirror: false,
       tgCameraShake: false, tgRgbSplit: false, tgImage: false, tgFade: false,
       fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
-      frameByFrame: true,
-      tgBackground: true, tgLogo: true, tgVignette: false, tgText: false,
+      frameByFrame: true, convertMp4: false,
+      tgBackground: true, tgLogo: true, tgVignette: false, tgText: false, tgBlur: false,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
     effects: {

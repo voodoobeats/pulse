@@ -57,11 +57,20 @@
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: var(--sidebar-w, 360px) 1fr;
     grid-template-rows: 56px 1fr 64px;
     height: 100vh;
     gap: 0;
   }
+  .sidebar-resizer {
+    position: absolute; top: 56px; bottom: 64px; left: var(--sidebar-w, 360px);
+    width: 9px; margin-left: -5px; cursor: col-resize; z-index: 50;
+  }
+  .sidebar-resizer::after {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px;
+    background: transparent; transition: background 0.12s;
+  }
+  .sidebar-resizer:hover::after, .sidebar-resizer.dragging::after { background: var(--accent); }
 
   /* topbar */
   .topbar {
@@ -958,6 +967,7 @@
       height: 100vh;
       height: 100dvh; /* dynamic viewport height for mobile browsers */
     }
+    .sidebar-resizer { display: none; }
 
     /* Topbar — collapse meta info */
     .topbar {
@@ -1119,6 +1129,10 @@
   .effect-card .fx-body { padding: 12px 12px 14px; }
   .effect-card.fx-off { opacity: 0.55; }
   .effect-card.fx-off .fx-dot { background: var(--ink-faint); box-shadow: none; }
+  .effect-card .fx-dot:hover { box-shadow: 0 0 10px var(--accent); }
+  .effect-card.fx-bypassed .fx-dot { background: var(--ink-faint); box-shadow: none; }
+  .effect-card.fx-bypassed .fx-title { color: var(--ink-faint); text-decoration: line-through; }
+  .effect-card.fx-bypassed .fx-body { opacity: 0.5; }
 
   .fx-adv { margin-top: 6px; border-top: 1px dashed var(--line); }
   .fx-adv > summary {
@@ -1312,6 +1326,9 @@
         <span><span class="eq-label">Level</span><span class="eq-val" id="eqLevel">−24 to −6 dB</span></span>
         <span><span class="eq-label">Fill</span><span class="eq-val eq-fill" id="eqFill">0%</span></span>
       </div>
+      <div style="font-size: 9px; color: var(--ink-faint); margin-top: 12px; line-height: 1.55; border-top: 1px solid var(--line); padding-top: 10px;">
+        <strong style="color: var(--accent-2)">FX start marker</strong> — the small handle on the timeline (bottom bar) sets when beat-reactive effects like Shockwave and particle bursts begin firing. Drag it right to hold them back past an intro.
+      </div>
     </div>
 
     <div class="section" data-section="motion">
@@ -1400,6 +1417,12 @@
           <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Particles</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
             <input type="checkbox" id="tgParticles" checked hidden>
+            <div class="field"><label>Mode</label>
+              <select id="partMode" class="fx-select">
+                <option value="burst" selected>Burst (on beat)</option>
+                <option value="constant">Constant (continuous)</option>
+              </select>
+            </div>
             <div class="field"><label>Particle Origin</label>
               <select id="partOrigin" class="fx-select">
                 <option value="middle" selected>Middle</option>
@@ -1620,6 +1643,10 @@
         <label>Quality (CRF) <span class="v" id="crfV">23</span></label>
         <input type="range" id="crf" min="18" max="30" value="23" />
       </div>
+      <div class="field">
+        <div class="toggles"><label><input type="checkbox" id="frameByFrame" checked><span>Frame-by-frame rendering</span></label></div>
+        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Renders every frame exactly (no real-time capture) — recommended. Uncheck to allow the legacy real-time recorder as a fallback if your browser can't render offline.</div>
+      </div>
 
       <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
         <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px;">
@@ -1647,6 +1674,8 @@
   </div>
 
   <!-- VIEWPORT -->
+  <div class="sidebar-resizer" id="sidebarResizer" title="Drag to resize the panel"></div>
+
   <div class="viewport">
     <div class="stage">
       <div class="stage-label">Preview · 16:9</div>
@@ -2129,7 +2158,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Particle origin / direction + flare orientation + rgb direction — redraw
-['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir'].forEach(id => {
+['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2230,6 +2259,10 @@ const effectBehindLogo = {
   particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
   image: false, rgbsplit: false,
 };
+
+// Bypassed effects render nothing (kept in the list but skipped). Toggled by
+// clicking the dot in an effect's header; the dot greys out when bypassed.
+const fxBypassed = {};
 
 // ============================================================
 // AUTOMATION SYSTEM
@@ -2377,6 +2410,20 @@ document.querySelectorAll('.effect-card').forEach(card => {
   const body = card.querySelector('.fx-body');
   if (!head || !body) return;
   const removeBtn = head.querySelector('.fx-remove');
+
+  // Dot = bypass toggle. Click to mute the effect without removing it.
+  const dot = head.querySelector('.fx-dot');
+  if (dot) {
+    dot.style.cursor = 'pointer';
+    dot.title = 'Bypass effect';
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fxBypassed[fx] = !fxBypassed[fx];
+      card.classList.toggle('fx-bypassed', !!fxBypassed[fx]);
+      redrawPreviewSafe();
+      autosaveDebounced();
+    });
+  }
 
   const gear = document.createElement('button');
   gear.type = 'button';
@@ -2570,7 +2617,26 @@ function removeAutomation(id) {
 
 // ---- Time graph editor
 let _graphCanvas = null, _graphId = null, _graphSel = -1, _graphDrag = false;
+let _graphPeaks = null, _graphPeaksKey = '';
 function timeAutomatedIds() { return AUTOMATABLE.filter(id => automations[id] && automations[id].type === 'time'); }
+
+// Downsampled waveform peaks for the graph background (cached by width+track).
+function ensureGraphPeaks(cols) {
+  if (!state.audioBuffer) { _graphPeaks = null; return; }
+  const key = cols + 'x' + state.audioBuffer.duration.toFixed(3);
+  if (_graphPeaks && _graphPeaksKey === key) return;
+  const data = state.audioBuffer.getChannelData(0);
+  const n = data.length;
+  const peaks = new Float32Array(cols);
+  const step = n / cols;
+  for (let i = 0; i < cols; i++) {
+    const s0 = Math.floor(i * step), s1 = Math.min(n, Math.floor((i + 1) * step));
+    let mx = 0;
+    for (let s = s0; s < s1; s++) { const v = Math.abs(data[s]); if (v > mx) mx = v; }
+    peaks[i] = mx;
+  }
+  _graphPeaks = peaks; _graphPeaksKey = key;
+}
 
 function openTimeEditor(id) {
   _graphId = id; _graphSel = -1;
@@ -2621,6 +2687,43 @@ function drawAutoGraph() {
   ctx.strokeStyle = 'rgba(255,255,255,0.08)';
   ctx.lineWidth = 1;
   ctx.strokeRect(m.padL, m.padT, m.W - m.padL - m.padR, m.H - m.padT - m.padB);
+
+  const plotX0 = m.padL, plotX1 = m.W - m.padR, plotY0 = m.padT, plotY1 = m.H - m.padB;
+
+  // ---- audio waveform behind the curve (so you can place keyframes on hits) ----
+  if (state.audioBuffer) {
+    const cols = Math.max(40, Math.round(plotX1 - plotX0));
+    ensureGraphPeaks(cols);
+    if (_graphPeaks) {
+      const midY = (plotY0 + plotY1) / 2;
+      const halfH = (plotY1 - plotY0) * 0.46;
+      ctx.fillStyle = 'rgba(120,124,150,0.18)';
+      for (let i = 0; i < _graphPeaks.length; i++) {
+        const x = plotX0 + i;
+        const hh = _graphPeaks[i] * halfH;
+        if (hh > 0.2) ctx.fillRect(x, midY - hh, 1, hh * 2);
+      }
+    }
+  }
+
+  // ---- time gridlines + labels ----
+  const divs = 8;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillStyle = 'rgba(200,200,210,0.45)';
+  ctx.lineWidth = 1;
+  ctx.font = '9px "JetBrains Mono", monospace';
+  ctx.textBaseline = 'top'; ctx.textAlign = 'center';
+  for (let i = 0; i <= divs; i++) {
+    const tt = m.dur * i / divs;
+    const x = gX(tt);
+    ctx.beginPath(); ctx.moveTo(x, plotY0); ctx.lineTo(x, plotY1); ctx.stroke();
+    if (i === 0) ctx.textAlign = 'left';
+    else if (i === divs) ctx.textAlign = 'right';
+    else ctx.textAlign = 'center';
+    ctx.fillText(formatTime(tt), Math.max(plotX0, Math.min(plotX1, x)), plotY1 + 4);
+  }
+  ctx.textAlign = 'center';
+
   // other automated params faintly
   ctx.lineWidth = 1.5;
   timeAutomatedIds().forEach(oid => {
@@ -3469,6 +3572,7 @@ function drawFrame(ctx, w, h, time, bass) {
   const logoGlowSize= pval('logoGlowSize') / 100;
   const partOrigin  = $('partOrigin').value;
   const partDirection = $('partDirection').value;
+  const partMode    = $('partMode') ? $('partMode').value : 'burst';
   const partAmount  = Math.round(pval('partAmount'));
   const partSize    = pval('partSize') / 100;
   const partGlow    = pval('partGlow') / 100;
@@ -3478,7 +3582,7 @@ function drawFrame(ctx, w, h, time, bass) {
   const grainAmt    = pval('grainAmt') / 100;
 
   // New modular effects
-  const tgCameraShake = $('tgCameraShake') ? $('tgCameraShake').checked : true;
+  const tgCameraShake = ($('tgCameraShake') ? $('tgCameraShake').checked : true) && !fxBypassed.camerashake;
   const shakeBlurMul  = $('shakeBlur') ? pval('shakeBlur') / 100 : 1;
   const tgRgbSplit  = $('tgRgbSplit') ? $('tgRgbSplit').checked : false;
   const rgbSplitAmt = $('rgbSplit') ? pval('rgbSplit') / 100 : 0;
@@ -3544,6 +3648,7 @@ function drawFrame(ctx, w, h, time, bass) {
 
   // One renderer per effect — invoked in canonical order within each pass.
   function renderFx(name) {
+    if (fxBypassed[name]) return;
     switch (name) {
       case 'ambient':
         if (tgAmbient) {
@@ -3580,7 +3685,7 @@ function drawFrame(ctx, w, h, time, bass) {
         break;
       case 'particles':
         if (tgParticles) {
-          drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection, partAmount, partSize, partGlow, partOpacity, partSpeed, partMirror);
+          drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection, partAmount, partSize, partGlow, partOpacity, partSpeed, partMirror, partMode);
         }
         break;
       case 'flare1':
@@ -3656,7 +3761,7 @@ function drawFrame(ctx, w, h, time, bass) {
 
   // ========== Fade effect (in/out + color + blur) — applied over everything ==========
   // No longer on by default: the user adds the "Fade" effect to enable it.
-  if ($('tgFade') && $('tgFade').checked) {
+  if ($('tgFade') && $('tgFade').checked && !fxBypassed.fade) {
     const fadeInOn = $('fadeIn').checked;
     const fadeOutOn = $('fadeOut').checked;
     const fadeDurSec = pval('fadeDur') / 10; // slider 1..100 → 0.1..10 s
@@ -4480,8 +4585,11 @@ async function prepareMediaFrame(t) {
   });
 }
 
-function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction, amount, sizeMul, glowMul, opacityMul, speedMul, mirror) {
-  if (effectsAmt < 0.01 || !onsets || onsets.length === 0) return;
+function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, direction, amount, sizeMul, glowMul, opacityMul, speedMul, mirror, mode) {
+  if (effectsAmt < 0.01) return;
+  mode = (mode === 'constant') ? 'constant' : 'burst';
+  // Burst mode rides the detected onsets; constant mode emits continuously.
+  if (mode === 'burst' && (!onsets || onsets.length === 0)) return;
 
   color = color || bgPalette.accent;
   origin = origin || 'middle';
@@ -4543,7 +4651,7 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
     }
   }
 
-  for (let o = 0; o < onsets.length; o++) {
+  if (mode === 'burst') for (let o = 0; o < onsets.length; o++) {
     const onset = onsets[o];
     if (onset.time < state.fxStart) continue;
     const age = time - onset.time;
@@ -4576,6 +4684,38 @@ function drawBurstParticles(ctx, w, h, time, effectsAmt, color, origin, directio
       paint(px, py, size, fade);
       // Mirror-at-middle: reflect across the vertical centre line (Trap-Nation
       // style left/right symmetry).
+      if (mirror) paint(w - px, py, size, fade);
+    }
+  }
+
+  // ---- CONSTANT mode: a steady stream that speeds up on bass ----
+  // Particles are emitted at a fixed rate; each carries the bass energy from its
+  // spawn time, so hits make freshly-spawned particles shoot out faster. Fully
+  // deterministic (depends only on time), so preview and render match.
+  if (mode === 'constant') {
+    const clife = 2.4;
+    const rate = Math.max(2, particlesPerBurst); // particles per second
+    const kEnd = Math.floor(time * rate);
+    const kStart = Math.ceil((time - clife) * rate);
+    for (let k = kStart; k <= kEnd; k++) {
+      if (k < 0) continue;
+      const t0 = k / rate;
+      if (t0 < state.fxStart) continue;
+      const age = time - t0;
+      if (age < 0 || age > clife) continue;
+      const rng = makePRNG((k + 1) * 2654435761);
+      const [sx, sy] = spawnPoint(rng);
+      let angle;
+      if (radialDefault) angle = rng() * Math.PI * 2;
+      else angle = baseAngle(sx, sy) + (rng() - 0.5) * 1.0;
+      const bAtSpawn = (typeof getKeysFillSmoothed === 'function') ? getKeysFillSmoothed(t0) : 0;
+      const speed = (0.10 + rng() * 0.16) * Math.max(w, h) * (0.55 + bAtSpawn * 1.7) * speedMul;
+      const px = sx + Math.cos(angle) * speed * age;
+      const py = sy + Math.sin(angle) * speed * age;
+      const fade = Math.min(1, age * 5) * Math.pow(1 - age / clife, 1.3); // fade in then out
+      if (fade < 0.01) continue;
+      const size = (1.2 + rng() * 2.4) * effectsAmt * sizeMul;
+      paint(px, py, size, fade);
       if (mirror) paint(w - px, py, size, fade);
     }
   }
@@ -4797,6 +4937,49 @@ window.addEventListener('resize', () => {
   if (state.audioBuffer) drawPreviewFrame(getCurrentTime(), getCurrentBass());
 });
 resizePreview();
+
+// ---------- Resizable sidebar (drag the divider to trade preview size for panel room)
+(function setupSidebarResizer() {
+  const rez = $('sidebarResizer');
+  const app = document.querySelector('.app');
+  if (!rez || !app) return;
+  const MIN = 280, MAX = 820;
+  const saved = parseInt(localStorage.getItem('pulse_sidebar_w') || '', 10);
+  if (saved >= MIN && saved <= MAX) app.style.setProperty('--sidebar-w', saved + 'px');
+  let dragging = false;
+  function onMove(e) {
+    if (!dragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const rect = app.getBoundingClientRect();
+    let w = Math.max(MIN, Math.min(MAX, clientX - rect.left));
+    app.style.setProperty('--sidebar-w', w + 'px');
+    if (e.cancelable) e.preventDefault();
+  }
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    rez.classList.remove('dragging');
+    document.body.style.userSelect = '';
+    const w = parseInt(getComputedStyle(app).getPropertyValue('--sidebar-w'), 10);
+    if (w) localStorage.setItem('pulse_sidebar_w', String(w));
+    requestAnimationFrame(() => {
+      resizePreview();
+      if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
+    });
+  }
+  function onDown(e) {
+    dragging = true;
+    rez.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    if (e.cancelable) e.preventDefault();
+  }
+  rez.addEventListener('mousedown', onDown);
+  rez.addEventListener('touchstart', onDown, { passive: false });
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('mouseup', onUp);
+  window.addEventListener('touchend', onUp);
+})();
 
 function drawPreviewFrame(time, bass) {
   drawFrame(previewCtx, previewCanvas.width, previewCanvas.height, time, bass);
@@ -6413,12 +6596,16 @@ async function tryRenderers(opts) {
   const mrMp4    = { name: 'MediaRecorder MP4 (real-time)',  safe: false, fn: () => renderWithMediaRecorder(opts, 'mp4') };
   const mrWebm   = { name: 'MediaRecorder WebM (real-time)', safe: false, fn: () => renderWithMediaRecorder(opts, 'webm') };
 
-  // Order: try the fast direct-MP4 path first; on browsers where it can't
-  // produce a valid MP4 (notably Firefox), fall to the offline WebM→MP4
-  // transcode (still frame-exact). Real-time capture stays as a last resort.
-  const renderers = isSafari
-    ? [mrMp4, webcodecs, webmOfflineMp4, mrWebm]
-    : [webcodecs, webmOfflineMp4, mrMp4, mrWebm];
+  // Frame-by-frame mode (default): only the frame-exact OFFLINE engines — never
+  // the real-time recorder. This is what keeps "every frame exact" and stops
+  // Safari from silently falling back to a real-time screen capture.
+  // Unchecked: legacy chain with real-time capture as a fallback.
+  const frameByFrame = $('frameByFrame') ? $('frameByFrame').checked : true;
+  const renderers = frameByFrame
+    ? [webcodecs, webmOfflineMp4]
+    : (isSafari
+        ? [mrMp4, webcodecs, webmOfflineMp4, mrWebm]
+        : [webcodecs, webmOfflineMp4, mrMp4, mrWebm]);
 
   const info = $('renderRendererInfo');
   const failures = [];
@@ -6450,6 +6637,9 @@ async function tryRenderers(opts) {
       // Brief pause between attempts so the UI label updates visibly
       await new Promise(res => setTimeout(res, 200));
     }
+  }
+  if (frameByFrame) {
+    throw new Error('Frame-by-frame rendering is not available in this browser.\nUncheck "Frame-by-frame rendering" in Export to allow the real-time recorder, or render in Chrome/Edge.\n\n' + failures.join('\n'));
   }
   throw new Error('All renderers failed:\n' + failures.join('\n'));
 }
@@ -6938,9 +7128,9 @@ const PRESET_SLIDER_IDS = [
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
 ];
 const PRESET_TEXT_IDS = ['topText', 'botText'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode'];
 const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
-  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact'];
+  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame'];
 const PRESET_COLOR_IDS = ['fadeColor'];
 
 function gatherEffects() {
@@ -6967,6 +7157,7 @@ function gatherPreset() {
       flare2: { x: flarePos.flare2.x, y: flarePos.flare2.y, bounce: !!($('cbBounce_flare2') && $('cbBounce_flare2').checked) },
     },
     behind: { ...effectBehindLogo },
+    bypass: { ...fxBypassed },
     colors2: {},
     mediaPos: { x: flarePos.image.x, y: flarePos.image.y },
     automations: JSON.parse(JSON.stringify(automations)),
@@ -7106,6 +7297,15 @@ function applyPreset(preset, silent) {
   }
   if (typeof syncBehindCheckboxes === 'function') syncBehindCheckboxes();
 
+  // Bypassed effects
+  Object.keys(fxBypassed).forEach(k => delete fxBypassed[k]);
+  if (preset.bypass) {
+    Object.keys(preset.bypass).forEach(k => { if (preset.bypass[k]) fxBypassed[k] = true; });
+  }
+  document.querySelectorAll('.effect-card').forEach(card => {
+    card.classList.toggle('fx-bypassed', !!fxBypassed[card.dataset.effect]);
+  });
+
   // Extra color pickers (fade color) + image position
   if (preset.colors2) {
     for (const id in preset.colors2) {
@@ -7208,7 +7408,7 @@ $('resetBtn').addEventListener('click', () => {
     selects: {
       fontStyle: 'cormorant', resolution: '1080', framerate: '60',
       partOrigin: 'middle', partDirection: 'center',
-      flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal',
+      flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal', partMode: 'burst',
     },
     toggles: {
       tgShockwave: true, tgParticles: true,
@@ -7219,6 +7419,7 @@ $('resetBtn').addEventListener('click', () => {
       partMirror: false,
       tgCameraShake: true, tgRgbSplit: false, tgImage: false, tgFade: false,
       fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
+      frameByFrame: true,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
     effects: {
@@ -7246,6 +7447,7 @@ $('resetBtn').addEventListener('click', () => {
     colors2: { fadeColor: '#000000' },
     mediaPos: { x: 0.5, y: 0.5 },
     automations: {},
+    bypass: {},
   };
   applyPreset(defaults);
 });

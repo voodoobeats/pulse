@@ -5207,11 +5207,27 @@ function getCurrentBass() {
   return getKeysFillSmoothed(getCurrentTime());
 }
 
+// Browsers start AudioContexts "suspended" until a user gesture, and embedded
+// iframes / post-login reloads make this bite often. Resume on the first gesture
+// and whenever we (re)create the context, so preview audio actually plays.
+function resumeAudioCtx() {
+  if (state.audioContext && state.audioContext.state !== 'running') {
+    try { state.audioContext.resume(); } catch (e) {}
+  }
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+  window.addEventListener(ev, resumeAudioCtx, { passive: true })
+);
+
 function play() {
   if (!state.audioBuffer || state.isPlaying) return;
   if (!bassEnv) { precomputeEnvelope(state.audioBuffer); detectOnsets(); precomputeSpectrogram(state.audioBuffer); computeShockwaveOnsets(); }
 
-  state.audioContext.resume();
+  // Make sure the context is actually running before we start the source,
+  // otherwise the buffer plays into a suspended context = silence.
+  if (state.audioContext.state !== 'running') {
+    try { state.audioContext.resume(); } catch (e) {}
+  }
   state.source = state.audioContext.createBufferSource();
   state.source.buffer = state.audioBuffer;
   state.source.connect(state.audioContext.destination);

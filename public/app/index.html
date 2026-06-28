@@ -1187,6 +1187,14 @@
   canvas#previewCanvas.flare-placing { cursor: crosshair; }
 
   /* Per-effect header buttons: collapse + gear */
+  .effect-card .fx-drag {
+    flex: 0 0 auto; width: 20px; height: 24px; border: 0; background: transparent;
+    color: var(--ink-faint); cursor: grab; font-size: 13px; line-height: 1; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .effect-card .fx-drag:hover { color: var(--ink); }
+  .effect-card .fx-drag:active { cursor: grabbing; }
+  .effect-card.fx-dragging { opacity: 0.5; outline: 1px dashed var(--accent); }
   .effect-card .fx-gear, .effect-card .fx-collapse {
     flex: 0 0 auto; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line);
     background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 13px; line-height: 1;
@@ -1235,7 +1243,6 @@
   <!-- TAB NAV (mobile only) -->
   <div class="tab-nav" id="tabNav">
     <button class="active" data-tab="sources">Sources</button>
-    <button data-tab="text">Text</button>
     <button data-tab="keys">Keys</button>
     <button data-tab="motion">Effects</button>
     <button data-tab="export">Export</button>
@@ -1257,29 +1264,9 @@
         <div class="info" id="audioInfo" style="display:none"></div>
       </label>
 
-      <div style="height: 10px"></div>
-
-      <label class="drop" id="dropLogo">
-        <input type="file" id="logoInput" accept="image/*" />
-        <div class="placeholder" id="logoPlaceholder">
-          <strong>Logo / Center Image</strong>
-          PNG with transparency recommended
-        </div>
-        <div class="filename" id="logoName" style="display:none"></div>
-      </label>
-
-      <div style="height: 10px"></div>
-
-      <label class="drop" id="dropBg">
-        <input type="file" id="bgInput" accept="image/*" />
-        <div class="placeholder" id="bgPlaceholder">
-          <strong>Background Image</strong>
-          Will fill 16:9 frame
-        </div>
-        <div class="filename" id="bgName" style="display:none"></div>
-      </label>
-
-      <div style="height: 10px"></div>
+      <div style="font-size: 9px; color: var(--ink-faint); margin: 4px 0 10px; line-height: 1.5;">
+        Logo &amp; background are now <strong style="color:var(--accent-2)">effects</strong> — add them in the Effects panel.
+      </div>
 
       <label class="drop" id="dropFont">
         <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2,application/font-sfnt" />
@@ -1289,27 +1276,6 @@
         </div>
         <div class="filename" id="fontName" style="display:none"></div>
       </label>
-    </div>
-
-    <div class="section" data-section="text">
-      <h3>Text Overlay <span class="num">02</span></h3>
-      <div class="field">
-        <label>Top Text</label>
-        <input type="text" id="topText" placeholder="ARTIST NAME" maxlength="60" />
-      </div>
-      <div class="field">
-        <label>Bottom Text</label>
-        <input type="text" id="botText" placeholder="Track Title" maxlength="60" />
-      </div>
-      <div class="field">
-        <label>Font Style</label>
-        <select id="fontStyle">
-          <option value="cormorant">Cinematic Serif (Cormorant)</option>
-          <option value="cinzel">Film Title (Cinzel)</option>
-          <option value="tenor">Cinematic Sans (Tenor)</option>
-          <option value="custom">Custom Uploaded Font</option>
-        </select>
-      </div>
     </div>
 
     <div class="section" data-section="keys">
@@ -1326,6 +1292,11 @@
         <span><span class="eq-label">Level</span><span class="eq-val" id="eqLevel">−24 to −6 dB</span></span>
         <span><span class="eq-label">Fill</span><span class="eq-val eq-fill" id="eqFill">0%</span></span>
       </div>
+      <div class="field" style="margin-top: 14px;">
+        <label>FX Intensity <span class="v" id="effectsV">85%</span></label>
+        <input type="range" id="effects" min="0" max="100" value="85" />
+        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Master amount · Particles · Shockwave · Grain</div>
+      </div>
       <div style="font-size: 9px; color: var(--ink-faint); margin-top: 12px; line-height: 1.55; border-top: 1px solid var(--line); padding-top: 10px;">
         <strong style="color: var(--accent-2)">FX start marker</strong> — the small handle on the timeline (bottom bar) sets when beat-reactive effects like Shockwave and particle bursts begin firing. Drag it right to hold them back past an intro.
       </div>
@@ -1334,45 +1305,81 @@
     <div class="section" data-section="motion">
       <h3>Effects <span class="num">04</span></h3>
 
-      <details class="scene-details" open>
-        <summary>Scene · background · logo · vignette</summary>
-        <div class="scene-body">
-          <div class="field">
-            <label>Logo Size <span class="v" id="logoSizeV">110%</span></label>
-            <input type="range" id="logoSize" min="30" max="200" value="110" />
-          </div>
-          <div class="field">
-            <label>Logo Bounce <span class="v" id="logoBounceV">100%</span></label>
-            <input type="range" id="logoBounce" min="0" max="200" value="100" />
-          </div>
-          <div class="field">
-            <label>Background Bounce <span class="v" id="bgBounceV">100%</span></label>
-            <input type="range" id="bgBounce" min="0" max="200" value="100" />
-          </div>
-          <div class="field">
-            <label>BG Desaturation <span class="v" id="desatV">85%</span></label>
-            <input type="range" id="desat" min="0" max="100" value="85" />
-            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Color returns on bass</div>
-          </div>
-          <div class="field">
-            <label>BG Darkness <span class="v" id="darkV">60%</span></label>
-            <input type="range" id="dark" min="0" max="100" value="60" />
-            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Brightens on bass</div>
-          </div>
-          <div class="field">
-            <label>Vignette Strength <span class="v" id="vigV">100%</span></label>
-            <input type="range" id="vig" min="0" max="100" value="100" />
-            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Opens up on bass</div>
-          </div>
-          <div class="field">
-            <label>FX Intensity <span class="v" id="effectsV">85%</span></label>
-            <input type="range" id="effects" min="0" max="100" value="85" />
-            <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Particles · Shockwave · Grain</div>
-          </div>
-        </div>
-      </details>
+      <div style="font-size: 9px; color: var(--ink-faint); margin-bottom: 12px; line-height: 1.55;">
+        Drag the <strong style="color:var(--ink-dim)">⠿</strong> handle to reorder layers (top = back, bottom = front). Click the <strong style="color:var(--ink-dim)">dot</strong> to bypass an effect.
+      </div>
 
       <div class="fx-stack" id="fxStack">
+
+        <div class="effect-card" data-effect="background">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Background</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgBackground" checked hidden>
+            <label class="drop" id="dropBg" style="margin-bottom:10px">
+              <input type="file" id="bgInput" accept="image/*" />
+              <div class="placeholder" id="bgPlaceholder"><strong>Background Image</strong>Will fill 16:9 frame</div>
+              <div class="filename" id="bgName" style="display:none"></div>
+            </label>
+            <div class="field"><label>Background Bounce <span class="v" id="bgBounceV">100%</span></label><input type="range" id="bgBounce" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Desaturation <span class="v" id="desatV">85%</span></label><input type="range" id="desat" min="0" max="100" value="85" /><div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Color returns on bass</div></div>
+            <div class="field"><label>Darkness <span class="v" id="darkV">60%</span></label><input type="range" id="dark" min="0" max="100" value="60" /><div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Brightens on bass</div></div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="logo">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Logo</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgLogo" checked hidden>
+            <label class="drop" id="dropLogo" style="margin-bottom:10px">
+              <input type="file" id="logoInput" accept="image/*" />
+              <div class="placeholder" id="logoPlaceholder"><strong>Logo / Center Image</strong>PNG with transparency recommended</div>
+              <div class="filename" id="logoName" style="display:none"></div>
+            </label>
+            <div class="field"><label>Logo Size <span class="v" id="logoSizeV">110%</span></label><input type="range" id="logoSize" min="30" max="200" value="110" /></div>
+            <div class="field"><label>Logo Bounce <span class="v" id="logoBounceV">100%</span></label><input type="range" id="logoBounce" min="0" max="200" value="100" /></div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="vignette" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Vignette</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgVignette" hidden>
+            <div class="field"><label>Strength <span class="v" id="vigV">100%</span></label><input type="range" id="vig" min="0" max="100" value="100" /><div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Opens up on bass</div></div>
+          </div>
+        </div>
+
+        <div class="effect-card" data-effect="text" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Text</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgText" hidden>
+            <div class="field"><label>Text</label>
+              <textarea id="textContent" rows="2" placeholder="Your text…" style="width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);padding:9px 12px;font-family:inherit;font-size:12px;border-radius:8px;resize:vertical;"></textarea>
+            </div>
+            <div class="field"><label>Font</label>
+              <select id="fontStyle" class="fx-select">
+                <option value="cormorant">Cinematic Serif (Cormorant)</option>
+                <option value="cinzel">Film Title (Cinzel)</option>
+                <option value="tenor">Cinematic Sans (Tenor)</option>
+                <option value="custom">Custom Uploaded Font</option>
+              </select>
+            </div>
+            <div class="field"><label>Alignment</label>
+              <select id="textAlign" class="fx-select">
+                <option value="center" selected>Center</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+            <div class="field"><label>Size <span class="v" id="textSizeV">100%</span></label><input type="range" id="textSize" min="20" max="300" value="100" /></div>
+            <div class="field"><label>Rotation <span class="v" id="textRotV">0°</span></label><input type="range" id="textRot" min="-180" max="180" value="0" /></div>
+            <button type="button" class="fx-posbtn" id="btnPos_text">⊕ Set position — drag on preview</button>
+            <button type="button" class="fx-posbtn" id="textCenter" style="margin-top:8px">⊕ Center horizontally</button>
+            <div class="color-row">
+              <label class="cb">Text Color</label>
+              <input type="color" id="textColor" value="#ffffff">
+            </div>
+          </div>
+        </div>
 
         <div class="effect-card" data-effect="glowbg">
           <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Glow Background</span><button class="fx-remove" title="Remove">×</button></div>
@@ -2062,6 +2069,7 @@ const flarePos = {
   flare1: { x: 0.5, y: 0.5 },
   flare2: { x: 0.5, y: 0.5 },
   image:  { x: 0.5, y: 0.5 },
+  text:   { x: 0.5, y: 0.88 },
 };
 let flarePlacing = '';
 
@@ -2115,6 +2123,7 @@ async function analyzeLogoPalette(img) {
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+  'textSize', 'textRot',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
@@ -2128,7 +2137,7 @@ async function analyzeLogoPalette(img) {
     else if (id === 'specDur' || id === 'specOff') display.textContent = v + ' ms';
     else if (id === 'shortFadeIn' || id === 'shortFadeOut') display.textContent = parseFloat(v).toFixed(1) + ' s';
     else if (id === 'fadeDur') display.textContent = (v / 10).toFixed(1) + ' s';
-    else if (id === 'mediaRot') display.textContent = v + '°';
+    else if (id === 'mediaRot' || id === 'textRot') display.textContent = v + '°';
     else display.textContent = v + '%';
   };
   el.addEventListener('input', () => {
@@ -2147,7 +2156,8 @@ async function analyzeLogoPalette(img) {
 // Toggle checkboxes — redraw preview on change
 ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
  'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror',
- 'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeBlurOn', 'rgbReact'].forEach(id => {
+ 'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeBlurOn', 'rgbReact',
+ 'tgBackground', 'tgLogo', 'tgVignette', 'tgText'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2158,7 +2168,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Particle origin / direction + flare orientation + rgb direction — redraw
-['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode'].forEach(id => {
+['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2236,29 +2246,40 @@ const FX_TOGGLES = {
   rgbsplit:  ['tgRgbSplit'],
   image:     ['tgImage'],
   fade:      ['tgFade'],
+  background: ['tgBackground'],
+  logo:      ['tgLogo'],
+  vignette:  ['tgVignette'],
+  text:      ['tgText'],
 };
 const FX_TITLES = {
   glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
   flare1: 'Optical Flare 1', flare2: 'Optical Flare 2',
   camerashake: 'Camera Shake', rgbsplit: 'RGB Split', image: 'Image / Video', fade: 'Fade',
+  background: 'Background', logo: 'Logo', vignette: 'Vignette', text: 'Text',
 };
-const FX_ORDER = ['glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2', 'camerashake', 'rgbsplit', 'image', 'fade'];
+const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2', 'camerashake', 'rgbsplit', 'image', 'vignette', 'text', 'fade'];
 
-// Canonical order in which effects are composed within each pass (behind/front
-// of the logo). drawFrame walks this twice — once for behind-logo effects, once
-// for the rest. (Camera Shake and Fade are NOT here — they're applied specially:
-// shake modifies the frame transform up front, fade is the very last overlay.)
-const FX_RENDER_ORDER = ['ambient', 'glowbg', 'logoglow', 'shockwave', 'image', 'particles', 'flare1', 'flare2', 'spectrum', 'grain', 'rgbsplit'];
-
-// Per-effect "render behind the logo" flag (set via each effect's gear menu).
-// Defaults reproduce the original layering. Only effects in FX_RENDER_ORDER use
-// this (the gear menu hides the option for the others).
-const effectBehindLogo = {
-  ambient: true, glowbg: true, logoglow: true, shockwave: true,
-  particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
-  image: false, rgbsplit: false,
-};
+// LAYER ORDER — a single stack the user can reorder by drag & drop. Read top to
+// bottom = back to front (top card drawn first, bottom drawn last/on top). The
+// Background effect is always forced to the very back regardless of its slot.
+const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flare1', 'flare2', 'spectrum', 'grain', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
+let fxOrder = DEFAULT_FX_ORDER.slice();
+function rebuildFxOrder() {
+  const stack = $('fxStack');
+  if (!stack) return;
+  fxOrder = Array.from(stack.querySelectorAll('.effect-card')).map(c => c.dataset.effect);
+}
+// Reorder the DOM cards to match an id array (used on load + when applying presets).
+function applyFxOrderToDom(order) {
+  const stack = $('fxStack');
+  if (!stack || !Array.isArray(order)) return;
+  order.forEach(id => {
+    const c = stack.querySelector('.effect-card[data-effect="' + id + '"]');
+    if (c) stack.appendChild(c); // moves it to the end → ends up in `order` sequence
+  });
+  rebuildFxOrder();
+}
 
 // Bypassed effects render nothing (kept in the list but skipped). Toggled by
 // clicking the dot in an effect's header; the dot greys out when bypassed.
@@ -2279,6 +2300,7 @@ const AUTOMATABLE = [
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+  'textSize', 'textRot',
 ];
 let __autoTime = 0;   // current frame time (seconds) — set at the top of drawFrame
 let __autoBass = 0;   // current bass-keys fill (0..1) — set at the top of drawFrame
@@ -2396,12 +2418,17 @@ rebuildAddMenu();
 // gear opens a small settings panel holding "Move effect behind Logo" plus a
 // disabled "Add automation" placeholder (automations come later).
 // ============================================================
-function syncBehindCheckboxes() {
-  document.querySelectorAll('.effect-card').forEach(card => {
-    const fx = card.dataset.effect;
-    const cb = card.querySelector('.fx-behind');
-    if (cb) cb.checked = !!effectBehindLogo[fx];
-  });
+let _fxDragging = null;
+function fxStackAfterElement(stack, y) {
+  const cards = Array.from(stack.querySelectorAll('.effect-card'));
+  let closest = null, closestOffset = -Infinity;
+  for (const c of cards) {
+    if (c === _fxDragging) continue;
+    const box = c.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closestOffset) { closestOffset = offset; closest = c; }
+  }
+  return closest;
 }
 
 document.querySelectorAll('.effect-card').forEach(card => {
@@ -2410,6 +2437,28 @@ document.querySelectorAll('.effect-card').forEach(card => {
   const body = card.querySelector('.fx-body');
   if (!head || !body) return;
   const removeBtn = head.querySelector('.fx-remove');
+
+  // Drag handle — reorder the layer stack
+  const drag = document.createElement('button');
+  drag.type = 'button';
+  drag.className = 'fx-drag';
+  drag.title = 'Drag to reorder layers';
+  drag.textContent = '⠿';
+  drag.setAttribute('draggable', 'true');
+  head.insertBefore(drag, head.firstChild);
+  drag.addEventListener('dragstart', (e) => {
+    _fxDragging = card;
+    card.classList.add('fx-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', fx); } catch (err) {}
+  });
+  drag.addEventListener('dragend', () => {
+    card.classList.remove('fx-dragging');
+    _fxDragging = null;
+    rebuildFxOrder();
+    redrawPreviewSafe();
+    autosaveDebounced();
+  });
 
   // Dot = bypass toggle. Click to mute the effect without removing it.
   const dot = head.querySelector('.fx-dot');
@@ -2425,54 +2474,30 @@ document.querySelectorAll('.effect-card').forEach(card => {
     });
   }
 
-  const gear = document.createElement('button');
-  gear.type = 'button';
-  gear.className = 'fx-gear';
-  gear.title = 'Effect settings';
-  gear.textContent = '⚙';
-
   const collapse = document.createElement('button');
   collapse.type = 'button';
   collapse.className = 'fx-collapse';
   collapse.title = 'Collapse / expand';
   collapse.innerHTML = '<span class="chev">▾</span>';
-
-  head.insertBefore(gear, removeBtn);
   head.insertBefore(collapse, removeBtn);
-
-  const settings = document.createElement('div');
-  settings.className = 'fx-settings';
-  settings.style.display = 'none';
-  // "Move behind Logo" only applies to effects that are composed via the
-  // behind/front render passes; others just get the automation placeholder.
-  const supportsBehind = FX_RENDER_ORDER.indexOf(fx) !== -1;
-  settings.innerHTML =
-    (supportsBehind ? '<label class="cb"><input type="checkbox" class="fx-behind"> Move effect behind Logo</label>' : '') +
-    '<button type="button" class="fx-automation" disabled title="Coming soon">+ Add automation</button>';
-  body.insertBefore(settings, body.firstChild);
-
-  const behindCb = settings.querySelector('.fx-behind');
-  if (behindCb) {
-    behindCb.checked = !!effectBehindLogo[fx];
-    behindCb.addEventListener('change', () => {
-      effectBehindLogo[fx] = behindCb.checked;
-      redrawPreviewSafe();
-      autosaveDebounced();
-    });
-  }
-
-  gear.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const open = settings.style.display !== 'none';
-    settings.style.display = open ? 'none' : 'flex';
-    gear.classList.toggle('active', !open);
-    if (!open) card.classList.remove('fx-collapsed');
-  });
   collapse.addEventListener('click', (e) => {
     e.stopPropagation();
     card.classList.toggle('fx-collapsed');
   });
 });
+
+// Drag-over reordering on the stack
+(function () {
+  const stack = $('fxStack');
+  if (!stack) return;
+  stack.addEventListener('dragover', (e) => {
+    if (!_fxDragging) return;
+    e.preventDefault();
+    const after = fxStackAfterElement(stack, e.clientY);
+    if (after == null) stack.appendChild(_fxDragging);
+    else stack.insertBefore(_fxDragging, after);
+  });
+})();
 
 // ============================================================
 // AUTOMATION UI — per-slider button, type chooser, sound editor, time graph
@@ -3592,6 +3617,12 @@ function drawFrame(ctx, w, h, time, bass) {
   const mediaScale  = $('mediaScale') ? pval('mediaScale') / 100 : 1;
   const mediaRot    = $('mediaRot') ? pval('mediaRot') : 0;
   const mediaOpacity= $('mediaOpacity') ? pval('mediaOpacity') / 100 : 1;
+  // Logo / Background / Vignette / Text / Fade are now effects too
+  const tgBackground = $('tgBackground') ? $('tgBackground').checked : false;
+  const tgLogo       = $('tgLogo') ? $('tgLogo').checked : false;
+  const tgVignette   = $('tgVignette') ? $('tgVignette').checked : false;
+  const tgText       = $('tgText') ? $('tgText').checked : false;
+  const tgFade       = $('tgFade') ? $('tgFade').checked : false;
 
   // Mid/high/impulse keep their old per-band meaning
   const midAdj  = Math.min(1, mid);
@@ -3606,28 +3637,22 @@ function drawFrame(ctx, w, h, time, bass) {
   const shakeX = (Math.sin(shakeAngle1) * 0.6 + Math.sin(shakeAngle2 * 1.7) * 0.4) * shakeMax;
   const shakeY = (Math.cos(shakeAngle1 * 1.3) * 0.6 + Math.cos(shakeAngle2) * 0.4) * shakeMax;
 
-  // Clear to black first
+  // Clear + a permanent gradient base. The Background EFFECT paints the bg
+  // image on top of this; without that effect you still get a soft backdrop.
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, w, h);
-
-  // ========== LAYER 1: Background (shake + desat + darkness wash + motion blur) ==========
-  if (state.bgImg) {
-    drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt, darkAmt, shakeX, shakeY, shakeStrength, shakeBlurMul);
-  } else {
-    const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h) * 0.7);
+  {
+    const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.7);
     grad.addColorStop(0, '#1a1a22');
     grad.addColorStop(1, '#000');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   }
 
-  // (removed static 0.30 black wash — BG darkness slider now handles this dynamically)
-
   // ==========================================================
   // EFFECT COMPOSITION
-  // Each effect renders either BEHIND or IN FRONT of the logo, chosen per-effect
-  // via its gear menu (effectBehindLogo). The defaults reproduce the original
-  // layer order exactly.
+  // Effects render in the user-sortable layer stack (fxOrder), top → bottom =
+  // back → front. The Background effect is always forced to the very back.
   // ==========================================================
 
   // Logo geometry — needed by glow/shockwave even when they sit behind the
@@ -3732,71 +3757,43 @@ function drawFrame(ctx, w, h, time, bass) {
           drawRgbSplit(ctx, w, h, rgbDir === 'vertical' ? 0 : px, rgbDir === 'vertical' ? px : 0);
         }
         break;
-    }
-  }
-
-  // Behind-logo pass → logo → front pass.
-  for (const _fx of FX_RENDER_ORDER) if (effectBehindLogo[_fx]) renderFx(_fx);
-  if (state.logoImg) {
-    drawLogoWithAberration(ctx, cx, cy, logoW, logoH, impulseAdj, effectsAmt, glowColor);
-  }
-  for (const _fx of FX_RENDER_ORDER) if (!effectBehindLogo[_fx]) renderFx(_fx);
-
-  // ========== Vignette (post — opens up on bass: 100% → 50% at peak) ==========
-  if (vigStrength > 0) {
-    const dynamicVig = vigStrength * (1 - Math.min(1, bassAdj * 1.2) * 0.5);
-    if (dynamicVig > 0.01) {
-      const vGrad = ctx.createRadialGradient(w/2, h/2, Math.min(w,h) * 0.3, w/2, h/2, Math.max(w,h) * 0.75);
-      vGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      vGrad.addColorStop(1, `rgba(0,0,0,${dynamicVig})`);
-      ctx.fillStyle = vGrad;
-      ctx.fillRect(0, 0, w, h);
-    }
-  }
-
-  // (Effects, logo, and vignette are composed above via the renderFx passes.)
-
-  // ========== Text overlays ==========
-  drawText(ctx, w, h, bassAdj, highAdj);
-
-  // ========== Fade effect (in/out + color + blur) — applied over everything ==========
-  // No longer on by default: the user adds the "Fade" effect to enable it.
-  if ($('tgFade') && $('tgFade').checked && !fxBypassed.fade) {
-    const fadeInOn = $('fadeIn').checked;
-    const fadeOutOn = $('fadeOut').checked;
-    const fadeDurSec = pval('fadeDur') / 10; // slider 1..100 → 0.1..10 s
-    const dur = state.audioBuffer ? state.audioBuffer.duration : 0;
-    let fadeAmt = 0;
-    if (fadeInOn && fadeDurSec > 0 && time < fadeDurSec) {
-      const p = time / fadeDurSec;
-      fadeAmt = Math.max(fadeAmt, 1 - (p * p * (3 - 2 * p)));
-    }
-    if (fadeOutOn && fadeDurSec > 0 && dur > 0 && time > dur - fadeDurSec) {
-      const p = Math.min(1, (time - (dur - fadeDurSec)) / fadeDurSec);
-      fadeAmt = Math.max(fadeAmt, p * p * (3 - 2 * p));
-    }
-    if (fadeAmt > 0.001) {
-      if ($('fadeBlurOn') && $('fadeBlurOn').checked) {
-        const blurPx = fadeAmt * (pval('fadeBlurStr') / 100) * 40;
-        if (blurPx > 0.3) {
-          const sc = getScratch(w, h);
-          sc.ctx.clearRect(0, 0, w, h);
-          sc.ctx.drawImage(ctx.canvas, 0, 0);
-          ctx.save();
-          ctx.filter = `blur(${blurPx}px)`;
-          ctx.drawImage(sc.canvas, 0, 0);
-          ctx.filter = 'none';
-          ctx.restore();
+      case 'background':
+        if (tgBackground && state.bgImg) {
+          drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt, darkAmt, shakeX, shakeY, shakeStrength, shakeBlurMul);
         }
-      }
-      const useCustom = $('fadeColorOn') && $('fadeColorOn').checked;
-      const fadeRgb = useCustom ? hexToRgb($('fadeColor').value) : [0, 0, 0];
-      ctx.fillStyle = rgba(fadeRgb, fadeAmt);
-      ctx.fillRect(0, 0, w, h);
+        break;
+      case 'logo':
+        if (tgLogo && state.logoImg) {
+          drawLogoWithAberration(ctx, cx, cy, logoW, logoH, impulseAdj, effectsAmt, glowColor);
+        }
+        break;
+      case 'vignette':
+        if (tgVignette && vigStrength > 0) {
+          const dynamicVig = vigStrength * (1 - Math.min(1, bassAdj * 1.2) * 0.5);
+          if (dynamicVig > 0.01) {
+            const vGrad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
+            vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            vGrad.addColorStop(1, `rgba(0,0,0,${dynamicVig})`);
+            ctx.fillStyle = vGrad;
+            ctx.fillRect(0, 0, w, h);
+          }
+        }
+        break;
+      case 'text':
+        if (tgText) drawTextEffect(ctx, w, h, bassAdj, highAdj);
+        break;
+      case 'fade':
+        if (tgFade) drawFadeEffect(ctx, w, h, time);
+        break;
     }
   }
 
-  // ========== LAYER 9: Outro fade-to-black (shorts only) ==========
+  // ===== Compose the layer stack =====
+  // Background is forced to the very back regardless of where its card sits.
+  renderFx('background');
+  for (const _fx of fxOrder) { if (_fx !== 'background') renderFx(_fx); }
+
+  // ========== Outro fade-to-black (shorts only) ==========
   // Same smoothstep as the intro, but ramping UP to full black over the clip's
   // last `videoFadeOut.dur` seconds. Only active while rendering shorts.
   if (videoFadeOut) {
@@ -4844,58 +4841,104 @@ function drawGrain(ctx, w, h, time, intensity) {
   ctx.restore();
 }
 
-function drawText(ctx, w, h, bassAdj, highAdj) {
-  const topText = $('topText').value.trim();
-  const botText = $('botText').value.trim();
-  const fontStyle = $('fontStyle').value;
+// ============================================================
+// TEXT EFFECT — one positionable text block with font, alignment, size,
+// rotation, colour and a draggable position (flarePos.text).
+// ============================================================
+function textFontSpec(fontStyle) {
+  if (fontStyle === 'cinzel') return { family: '"Cinzel", "Trajan Pro", serif', weight: '400', tracking: 0.24, upper: true };
+  if (fontStyle === 'tenor')  return { family: '"Tenor Sans", "Futura", sans-serif', weight: '400', tracking: 0.28, upper: true };
+  if (fontStyle === 'custom') return { family: '"UserFont", "Cormorant Garamond", serif', weight: '400', tracking: 0.15, upper: false };
+  return { family: '"Cormorant Garamond", serif', weight: '400', tracking: 0.15, upper: false };
+}
 
-  // Single font + single weight for both top and bottom, no bold, no italic
-  let family, weight, tracking, upper;
-  if (fontStyle === 'cinzel') {
-    family = '"Cinzel", "Trajan Pro", serif';
-    weight = '400';              // Cinzel regular — no bold
-    tracking = 0.24;
-    upper = true;
-  } else if (fontStyle === 'tenor') {
-    family = '"Tenor Sans", "Futura", sans-serif';
-    weight = '400';              // Tenor only ships regular
-    tracking = 0.28;
-    upper = true;
-  } else if (fontStyle === 'custom') {
-    family = '"UserFont", "Cormorant Garamond", serif';
-    weight = '400';
-    tracking = 0.15;             // restrained default — user font character shines through
-    upper = false;
-  } else { // cormorant
-    family = '"Cormorant Garamond", serif';
-    weight = '400';              // Cormorant regular — no bold
-    tracking = 0.15;
-    upper = false;
-  }
+function drawTextEffect(ctx, w, h, bassAdj, highAdj) {
+  const content = $('textContent') ? $('textContent').value : '';
+  if (!content || !content.trim()) return;
+  const f = textFontSpec($('fontStyle') ? $('fontStyle').value : 'cormorant');
+  const align = $('textAlign') ? $('textAlign').value : 'center';
+  const sizeMul = $('textSize') ? pval('textSize') / 100 : 1;
+  const rot = $('textRot') ? pval('textRot') : 0;
+  const color = ($('textColor') ? $('textColor').value : '#ffffff');
+  const px = flarePos.text.x * w, py = flarePos.text.y * h;
+  const size = h * 0.05 * sizeMul;
+  const lines = content.split('\n');
 
-  // Halved text size — was 0.034 / 0.052, now exactly the same for both
-  const size = h * 0.022;
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
+  ctx.save();
+  ctx.translate(px, py);
+  if (rot) ctx.rotate(rot * Math.PI / 180);
+  ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(0,0,0,0.75)';
   ctx.shadowBlur = h * 0.012;
   ctx.shadowOffsetY = 1;
-  ctx.fillStyle = '#fff';
-  ctx.font = `${weight} ${size}px ${family}`;
-
-  if (topText) {
-    const str = upper ? topText.toUpperCase() : topText;
-    drawTrackedText(ctx, str, w / 2, h * 0.055, size * tracking);
-  }
-  if (botText) {
-    const str = upper ? botText.toUpperCase() : botText;
-    drawTrackedText(ctx, str, w / 2, h * 0.97, size * tracking);
-  }
-
+  ctx.fillStyle = color;
+  ctx.font = `${f.weight} ${size}px ${f.family}`;
+  const lineH = size * 1.28;
+  const totalH = lineH * lines.length;
+  lines.forEach((ln, i) => {
+    const str = f.upper ? ln.toUpperCase() : ln;
+    const yy = -totalH / 2 + lineH * (i + 0.5);
+    drawAlignedTrackedText(ctx, str, 0, yy, size * f.tracking, align);
+  });
+  ctx.restore();
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
+}
+
+// Tracked text with horizontal alignment around an anchor X.
+function drawAlignedTrackedText(ctx, text, anchorX, y, tracking, align) {
+  if (!text) return;
+  ctx.textAlign = 'left';
+  const widths = [];
+  let total = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ww = ctx.measureText(text[i]).width;
+    widths.push(ww);
+    total += ww + (i < text.length - 1 ? tracking : 0);
+  }
+  let x = align === 'left' ? anchorX : align === 'right' ? anchorX - total : anchorX - total / 2;
+  for (let i = 0; i < text.length; i++) {
+    ctx.fillText(text[i], x, y);
+    x += widths[i] + tracking;
+  }
+}
+
+// ============================================================
+// FADE EFFECT — fade in/out over the track, optional colour + blur.
+// ============================================================
+function drawFadeEffect(ctx, w, h, time) {
+  const fadeInOn = $('fadeIn') ? $('fadeIn').checked : true;
+  const fadeOutOn = $('fadeOut') ? $('fadeOut').checked : true;
+  const fadeDurSec = pval('fadeDur') / 10; // slider 1..100 → 0.1..10 s
+  const dur = state.audioBuffer ? state.audioBuffer.duration : 0;
+  let fadeAmt = 0;
+  if (fadeInOn && fadeDurSec > 0 && time < fadeDurSec) {
+    const p = time / fadeDurSec;
+    fadeAmt = Math.max(fadeAmt, 1 - (p * p * (3 - 2 * p)));
+  }
+  if (fadeOutOn && fadeDurSec > 0 && dur > 0 && time > dur - fadeDurSec) {
+    const p = Math.min(1, (time - (dur - fadeDurSec)) / fadeDurSec);
+    fadeAmt = Math.max(fadeAmt, p * p * (3 - 2 * p));
+  }
+  if (fadeAmt <= 0.001) return;
+  if ($('fadeBlurOn') && $('fadeBlurOn').checked) {
+    const blurPx = fadeAmt * (pval('fadeBlurStr') / 100) * 40;
+    if (blurPx > 0.3) {
+      const sc = getScratch(w, h);
+      sc.ctx.clearRect(0, 0, w, h);
+      sc.ctx.drawImage(ctx.canvas, 0, 0);
+      ctx.save();
+      ctx.filter = `blur(${blurPx}px)`;
+      ctx.drawImage(sc.canvas, 0, 0);
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+  }
+  const useCustom = $('fadeColorOn') && $('fadeColorOn').checked;
+  const fadeRgb = useCustom ? hexToRgb($('fadeColor').value) : [0, 0, 0];
+  ctx.fillStyle = rgba(fadeRgb, fadeAmt);
+  ctx.fillRect(0, 0, w, h);
 }
 
 // Draw text with letter-spacing (tracking) — since Canvas has no native letterSpacing
@@ -5006,7 +5049,7 @@ function drawFlarePlacingGuide() {
   const fs = Math.max(9, Math.round(h * 0.025));
   ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  const lbl = flarePlacing === 'flare1' ? 'FLARE 1' : flarePlacing === 'flare2' ? 'FLARE 2' : 'IMAGE';
+  const lbl = flarePlacing === 'flare1' ? 'FLARE 1' : flarePlacing === 'flare2' ? 'FLARE 2' : flarePlacing === 'text' ? 'TEXT' : 'IMAGE';
   ctx.fillText(lbl, px, py - r * 1.6);
   ctx.restore();
 }
@@ -5254,7 +5297,7 @@ fxMarkerHit.addEventListener('touchstart', startMarkerDrag, { passive: false });
 // Toggle a flare's "Set position" button, then click/drag anywhere on the
 // preview to move that flare. Position is stored normalized (0..1).
 // ============================================================
-const PLACEABLE = ['flare1', 'flare2', 'image'];
+const PLACEABLE = ['flare1', 'flare2', 'image', 'text'];
 function setFlarePlacing(id) {
   flarePlacing = (flarePlacing === id) ? '' : id;
   PLACEABLE.forEach(f => {
@@ -6759,9 +6802,15 @@ function interleave2ch(audioBuffer) {
 }
 
 // ---------- Initial preview placeholder text update
-$('topText').addEventListener('input', () => { if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass()); });
-$('botText').addEventListener('input', () => { if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass()); });
-$('fontStyle').addEventListener('change', () => { if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass()); });
+if ($('textContent')) $('textContent').addEventListener('input', () => { redrawPreviewSafe(); });
+if ($('textColor')) $('textColor').addEventListener('input', () => { redrawPreviewSafe(); });
+if ($('fontStyle')) $('fontStyle').addEventListener('change', () => { redrawPreviewSafe(); });
+// Text "Center horizontally" — reset the text X position to the middle.
+if ($('textCenter')) $('textCenter').addEventListener('click', () => {
+  flarePos.text.x = 0.5;
+  redrawPreviewSafe();
+  autosaveDebounced();
+});
 
 // ---------- Tab navigation (mobile)
 const tabButtons = document.querySelectorAll('#tabNav button');
@@ -7126,12 +7175,14 @@ const PRESET_SLIDER_IDS = [
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+  'textSize', 'textRot',
 ];
-const PRESET_TEXT_IDS = ['topText', 'botText'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode'];
+const PRESET_TEXT_IDS = ['textContent'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign'];
 const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
-  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame'];
-const PRESET_COLOR_IDS = ['fadeColor'];
+  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame',
+  'tgBackground', 'tgLogo', 'tgVignette', 'tgText'];
+const PRESET_COLOR_IDS = ['fadeColor', 'textColor'];
 
 function gatherEffects() {
   const colors = {};
@@ -7156,10 +7207,11 @@ function gatherPreset() {
       flare1: { x: flarePos.flare1.x, y: flarePos.flare1.y, bounce: !!($('cbBounce_flare1') && $('cbBounce_flare1').checked) },
       flare2: { x: flarePos.flare2.x, y: flarePos.flare2.y, bounce: !!($('cbBounce_flare2') && $('cbBounce_flare2').checked) },
     },
-    behind: { ...effectBehindLogo },
+    order: fxOrder.slice(),
     bypass: { ...fxBypassed },
     colors2: {},
     mediaPos: { x: flarePos.image.x, y: flarePos.image.y },
+    textPos: { x: flarePos.text.x, y: flarePos.text.y },
     automations: JSON.parse(JSON.stringify(automations)),
   };
   PRESET_COLOR_IDS.forEach(id => {
@@ -7289,13 +7341,10 @@ function applyPreset(preset, silent) {
     });
   }
 
-  // Per-effect "render behind logo" flags
-  if (preset.behind) {
-    Object.keys(effectBehindLogo).forEach(fx => {
-      if (typeof preset.behind[fx] === 'boolean') effectBehindLogo[fx] = preset.behind[fx];
-    });
+  // Layer order (drag & drop). Reorder the DOM cards to match, then refresh.
+  if (Array.isArray(preset.order) && preset.order.length) {
+    applyFxOrderToDom(preset.order);
   }
-  if (typeof syncBehindCheckboxes === 'function') syncBehindCheckboxes();
 
   // Bypassed effects
   Object.keys(fxBypassed).forEach(k => delete fxBypassed[k]);
@@ -7317,6 +7366,10 @@ function applyPreset(preset, silent) {
   if (preset.mediaPos) {
     if (typeof preset.mediaPos.x === 'number') flarePos.image.x = Math.max(0, Math.min(1, preset.mediaPos.x));
     if (typeof preset.mediaPos.y === 'number') flarePos.image.y = Math.max(0, Math.min(1, preset.mediaPos.y));
+  }
+  if (preset.textPos) {
+    if (typeof preset.textPos.x === 'number') flarePos.text.x = Math.max(0, Math.min(1, preset.textPos.x));
+    if (typeof preset.textPos.y === 'number') flarePos.text.y = Math.max(0, Math.min(1, preset.textPos.y));
   }
 
   // Automations (time keyframes / sound). Replace wholesale when present.
@@ -7383,10 +7436,8 @@ $('loadInput').addEventListener('change', async (e) => {
   }
 });
 
-$('resetBtn').addEventListener('click', () => {
-  if (!confirm('Reset all settings to defaults?')) return;
-  // Default preset — mirrors the initial HTML values
-  const defaults = {
+function getDefaultPreset() {
+  return {
     version: 3,
     sliders: {
       logoSize: '110', logoBounce: '100', bgBounce: '100',
@@ -7403,27 +7454,31 @@ $('resetBtn').addEventListener('click', () => {
       flare1Int: '100', flare1Size: '100', flare2Int: '100', flare2Size: '100',
       shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100',
       fadeDur: '15', fadeBlurStr: '50',
+      textSize: '100', textRot: '0',
     },
-    text: { topText: '', botText: '' },
+    text: { textContent: '' },
     selects: {
       fontStyle: 'cormorant', resolution: '1080', framerate: '60',
       partOrigin: 'middle', partDirection: 'center',
       flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal', partMode: 'burst',
+      textAlign: 'center',
     },
     toggles: {
-      tgShockwave: true, tgParticles: true,
-      tgSpecTop: true, tgSpecBot: true,
-      tgGrain: true, tgAmbient: true,
-      tgGlowBg: true, tgLogoGlow: false,
+      tgShockwave: false, tgParticles: false,
+      tgSpecTop: false, tgSpecBot: false,
+      tgGrain: false, tgAmbient: false,
+      tgGlowBg: false, tgLogoGlow: false,
       tgFlare1: false, tgFlare2: false,
       partMirror: false,
-      tgCameraShake: true, tgRgbSplit: false, tgImage: false, tgFade: false,
+      tgCameraShake: false, tgRgbSplit: false, tgImage: false, tgFade: false,
       fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
       frameByFrame: true,
+      tgBackground: true, tgLogo: true, tgVignette: false, tgText: false,
     },
     keys: { fLow: 40, fHigh: 120, dbLow: -24, dbHigh: -6 },
     effects: {
-      added: ['glowbg', 'shockwave', 'particles', 'spectrum', 'grain', 'ambient', 'camerashake'],
+      // A fresh project starts with just Background + Logo.
+      added: ['background', 'logo'],
       colors: {
         glowbg: { useBg: true, hex: '#ff8c3c' },
         shockwave: { useBg: true, hex: '#ff8c3c' },
@@ -7439,17 +7494,18 @@ $('resetBtn').addEventListener('click', () => {
       flare1: { x: 0.5, y: 0.5, bounce: true },
       flare2: { x: 0.5, y: 0.5, bounce: true },
     },
-    behind: {
-      ambient: true, glowbg: true, logoglow: true, shockwave: true,
-      particles: false, flare1: false, flare2: false, spectrum: false, grain: false,
-      image: false, rgbsplit: false,
-    },
-    colors2: { fadeColor: '#000000' },
+    order: DEFAULT_FX_ORDER.slice(),
+    colors2: { fadeColor: '#000000', textColor: '#ffffff' },
     mediaPos: { x: 0.5, y: 0.5 },
+    textPos: { x: 0.5, y: 0.88 },
     automations: {},
     bypass: {},
   };
-  applyPreset(defaults);
+}
+
+$('resetBtn').addEventListener('click', () => {
+  if (!confirm('Reset all settings to defaults?')) return;
+  applyPreset(getDefaultPreset());
 });
 
 // ============================================================
@@ -7466,10 +7522,16 @@ function autosaveNow() {
 function restoreAutosave() {
   try {
     const raw = localStorage.getItem(AUTOSAVE_KEY);
-    if (!raw) return;
-    const preset = JSON.parse(raw);
-    if (preset && (preset.version === 1 || preset.version === 2 || preset.version === 3)) applyPreset(preset, true);
+    if (raw) {
+      const preset = JSON.parse(raw);
+      if (preset && (preset.version === 1 || preset.version === 2 || preset.version === 3)) {
+        applyPreset(preset, true);
+        return;
+      }
+    }
   } catch (_) {}
+  // No (valid) autosave → start from the default project (Background + Logo only).
+  try { applyPreset(getDefaultPreset(), true); } catch (_) {}
 }
 
 let _autosaveTimer = null;

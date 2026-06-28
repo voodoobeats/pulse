@@ -412,7 +412,7 @@ body.studio-locked { overflow: hidden; }
   color: var(--ink-faint);
 }
 
-/* ---------- Pricing: subtle animated wireframe background ---------- */
+/* ---------- Pricing: 3D colored-gradient wireframe background ---------- */
 .page { position: relative; z-index: 1; }
 .pricing-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
@@ -423,24 +423,17 @@ body.studio-locked { overflow: hidden; }
     linear-gradient(var(--line) 1px, transparent 1px),
     linear-gradient(90deg, var(--line) 1px, transparent 1px);
   background-size: 56px 56px;
-  opacity: 0.16;
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 38%, #000 16%, transparent 72%);
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 38%, #000 16%, transparent 72%);
+  opacity: 0.10;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 14%, transparent 74%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 14%, transparent 74%);
   animation: pbDrift 34s linear infinite;
 }
 @keyframes pbDrift { from { transform: translate(0, 0); } to { transform: translate(56px, 56px); } }
-.pb-svg {
-  position: absolute; left: 50%; top: 40%;
-  width: min(860px, 125vw); height: min(860px, 125vw);
-  transform: translate(-50%, -50%); opacity: 0.42;
+.pricing-bg canvas {
+  position: absolute; inset: 0; width: 100% !important; height: 100% !important;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 42%, #000 30%, transparent 82%);
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 42%, #000 30%, transparent 82%);
 }
-.pb-svg * { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.pb-a { stroke: var(--accent); }
-.pb-b { stroke: var(--accent-2); }
-.pb-rot-slow, .pb-rot-rev { transform-box: fill-box; transform-origin: center; }
-.pb-rot-slow { animation: pbSpin 110s linear infinite; }
-.pb-rot-rev { animation: pbSpin 150s linear infinite reverse; }
-@keyframes pbSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .pricing-bg::before, .pb-rot-slow, .pb-rot-rev { animation: none; }
+  .pricing-bg::before { animation: none; }
 }

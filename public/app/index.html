@@ -1230,6 +1230,32 @@
     box-shadow: 0 0 0 1px var(--accent-2) inset;
   }
   canvas#previewCanvas.flare-placing { cursor: crosshair; }
+  .numrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .numrow > span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); width: 38px; flex: 0 0 auto; }
+  .numrow label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-dim); flex: 1; }
+  .numrow input[type="number"] {
+    width: 100%; padding: 6px 7px; border-radius: 6px; border: 1px solid var(--line-2);
+    background: var(--panel-2); color: var(--ink); font-size: 12px; font-family: inherit;
+  }
+  .numrow input[type="number"]:focus { outline: none; border-color: var(--accent); }
+  .flare-inst {
+    border: 1px solid var(--line-2); border-radius: 10px; padding: 11px 11px 13px;
+    margin-bottom: 10px; background: var(--panel-2);
+  }
+  .flare-inst .fi-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .flare-inst .fi-title { font-size: 12px; font-weight: 600; color: var(--ink); letter-spacing: 0.02em; }
+  .flare-inst .fi-remove {
+    margin-left: auto; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line-2);
+    background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 14px; line-height: 1;
+  }
+  .flare-inst .fi-remove:hover { color: var(--red, #ff5dcc); border-color: var(--red, #ff5dcc); }
+  .flare-inst .fi-adv > summary {
+    cursor: pointer; list-style: none; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 6px 0 2px;
+  }
+  .flare-inst .fi-adv > summary::-webkit-details-marker { display: none; }
+  .flare-inst .fi-adv > summary::before { content: '▸ '; }
+  .flare-inst .fi-adv[open] > summary::before { content: '▾ '; }
 
   /* Per-effect header buttons: collapse + gear */
   .effect-card .fx-drag {
@@ -1323,6 +1349,16 @@
       </label>
     </div>
 
+    <div class="section" data-section="presets">
+      <h3>Presets <span class="num">02</span></h3>
+      <div class="preset-row">
+        <button id="saveBtn" title="Save the current look (incl. logo) to your account">Save</button>
+        <button id="loadBtn" title="Load a saved preset from your account">Load</button>
+        <button id="resetBtn" title="Reset all settings to defaults">Reset</button>
+      </div>
+      <div style="font-size: 9px; color: var(--ink-faint); margin-top: 8px; line-height: 1.5;">Saved to your account (settings + logo). Sign in to use presets.</div>
+    </div>
+
     <div class="section" data-section="keys">
       <h3>Bass Keys <span class="num">03</span></h3>
       <div style="font-size: 10px; color: var(--ink-dim); margin-bottom: 10px; line-height: 1.5;">
@@ -1341,9 +1377,6 @@
         <label>FX Intensity <span class="v" id="effectsV">85%</span></label>
         <input type="range" id="effects" min="0" max="100" value="85" />
         <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Master amount · Particles · Shockwave · Grain</div>
-      </div>
-      <div style="font-size: 9px; color: var(--ink-faint); margin-top: 12px; line-height: 1.55; border-top: 1px solid var(--line); padding-top: 10px;">
-        <strong style="color: var(--accent-2)">FX start marker</strong> — the small handle on the timeline (bottom bar) sets when beat-reactive effects like Shockwave and particle bursts begin firing. Drag it right to hold them back past an intro.
       </div>
     </div>
 
@@ -1536,7 +1569,14 @@
           <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Audio Spectrum</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
             <input type="checkbox" id="tgSpectrum" checked hidden>
-            <div class="field"><label>Mode</label>
+            <div class="field"><label>Shape</label>
+              <select id="specShape" class="fx-select">
+                <option value="line" selected>Line</option>
+                <option value="polar">Polar (circle)</option>
+                <option value="path">Path</option>
+              </select>
+            </div>
+            <div class="field"><label>Sides</label>
               <select id="specMode" class="fx-select">
                 <option value="single" selected>Single side</option>
                 <option value="mirror">Mirror (both sides)</option>
@@ -1545,9 +1585,42 @@
             <div class="field"><label>Amount <span class="v" id="spectrumV">70%</span></label><input type="range" id="spectrum" min="0" max="100" value="70" /></div>
             <div class="field"><label>Max Height <span class="v" id="specMaxHV">22%</span></label><input type="range" id="specMaxH" min="5" max="50" value="22" /></div>
             <div class="field"><label>Opacity <span class="v" id="specOpacityV">100%</span></label><input type="range" id="specOpacity" min="0" max="100" value="100" /></div>
-            <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.4; margin: 6px 0;">The spectrum is drawn along the line between a start and end point — drag them on the preview.</div>
-            <button type="button" class="fx-posbtn" id="btnPos_specStart">⊕ Set START point</button>
-            <button type="button" class="fx-posbtn" id="btnPos_specEnd" style="margin-top:8px">⊕ Set END point</button>
+
+            <div class="toggles" style="margin:8px 0">
+              <label><input type="checkbox" id="specFlipH"><span>Flip horizontal</span></label>
+              <label><input type="checkbox" id="specFlipV"><span>Flip vertical</span></label>
+            </div>
+
+            <!-- LINE layout -->
+            <div id="specLineOpts">
+              <button type="button" class="fx-posbtn" id="btnPos_specStart">⊕ Set START point — drag on preview</button>
+              <div class="numrow"><span>Start</span>
+                <label>X<input type="number" id="specStartX" step="1" /></label>
+                <label>Y<input type="number" id="specStartY" step="1" /></label>
+              </div>
+              <button type="button" class="fx-posbtn" id="btnPos_specEnd" style="margin-top:8px">⊕ Set END point — drag on preview</button>
+              <div class="numrow"><span>End</span>
+                <label>X<input type="number" id="specEndX" step="1" /></label>
+                <label>Y<input type="number" id="specEndY" step="1" /></label>
+              </div>
+              <div style="font-size:9px;color:var(--ink-faint);margin-top:4px">Values in pixels at the selected export resolution. 0,0 = top-left.</div>
+            </div>
+
+            <!-- POLAR layout -->
+            <div id="specPolarOpts" style="display:none">
+              <button type="button" class="fx-posbtn" id="btnPos_specStart2" data-place="specStart">⊕ Set CENTER — drag on preview</button>
+              <div class="field" style="margin-top:8px"><label>Radius <span class="v" id="specRadiusV">22%</span></label><input type="range" id="specRadius" min="2" max="48" value="22" /></div>
+              <div class="field"><label>Start Angle <span class="v" id="specAngleV">0°</span></label><input type="range" id="specAngle" min="0" max="360" value="0" /></div>
+            </div>
+
+            <!-- PATH layout -->
+            <div id="specPathOpts" style="display:none">
+              <div style="font-size:9px;color:var(--ink-faint);line-height:1.5;margin-bottom:6px">Click points on the preview to build a path; the spectrum runs along it.</div>
+              <button type="button" class="fx-posbtn" id="btnSpecPathAdd">⊕ Add path points (click preview)</button>
+              <button type="button" class="fx-posbtn" id="btnSpecPathClear" style="margin-top:8px">✕ Clear path</button>
+              <div style="font-size:9px;color:var(--ink-faint);margin-top:6px" id="specPathInfo">0 points</div>
+            </div>
+
             <div class="color-row">
               <label class="cb"><input type="checkbox" id="cbBg_spectrum" checked> Use Background Color</label>
               <input type="color" id="col_spectrum" value="#ff8c3c" disabled>
@@ -1586,47 +1659,13 @@
           </div>
         </div>
 
-        <div class="effect-card" data-effect="flare1" style="display:none">
-          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Optical Flare 1</span><button class="fx-remove" title="Remove">×</button></div>
+        <div class="effect-card" data-effect="flares" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Optical Flares</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
-            <input type="checkbox" id="tgFlare1" hidden>
-            <div class="field"><label>Orientation</label>
-              <select id="flare1Orient" class="fx-select">
-                <option value="horizontal" selected>Horizontal streak</option>
-                <option value="vertical">Vertical streak</option>
-              </select>
-            </div>
-            <div class="field"><label>Intensity <span class="v" id="flare1IntV">100%</span></label><input type="range" id="flare1Int" min="0" max="200" value="100" /></div>
-            <div class="field"><label>Size <span class="v" id="flare1SizeV">100%</span></label><input type="range" id="flare1Size" min="20" max="200" value="100" /></div>
-            <div class="field"><label>Opacity <span class="v" id="flare1OpacityV">100%</span></label><input type="range" id="flare1Opacity" min="0" max="100" value="100" /></div>
-            <button type="button" class="fx-posbtn" id="btnPos_flare1">⊕ Set position — drag on preview</button>
-            <label class="cb" style="margin-top:10px"><input type="checkbox" id="cbBounce_flare1" checked> Bounce relative to center</label>
-            <div class="color-row">
-              <label class="cb"><input type="checkbox" id="cbBg_flare1"> Use Background Color</label>
-              <input type="color" id="col_flare1" value="#7fc8ff">
-            </div>
-          </div>
-        </div>
-
-        <div class="effect-card" data-effect="flare2" style="display:none">
-          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Optical Flare 2</span><button class="fx-remove" title="Remove">×</button></div>
-          <div class="fx-body">
-            <input type="checkbox" id="tgFlare2" hidden>
-            <div class="field"><label>Orientation</label>
-              <select id="flare2Orient" class="fx-select">
-                <option value="horizontal">Horizontal streak</option>
-                <option value="vertical" selected>Vertical streak</option>
-              </select>
-            </div>
-            <div class="field"><label>Intensity <span class="v" id="flare2IntV">100%</span></label><input type="range" id="flare2Int" min="0" max="200" value="100" /></div>
-            <div class="field"><label>Size <span class="v" id="flare2SizeV">100%</span></label><input type="range" id="flare2Size" min="20" max="200" value="100" /></div>
-            <div class="field"><label>Opacity <span class="v" id="flare2OpacityV">100%</span></label><input type="range" id="flare2Opacity" min="0" max="100" value="100" /></div>
-            <button type="button" class="fx-posbtn" id="btnPos_flare2">⊕ Set position — drag on preview</button>
-            <label class="cb" style="margin-top:10px"><input type="checkbox" id="cbBounce_flare2" checked> Bounce relative to center</label>
-            <div class="color-row">
-              <label class="cb"><input type="checkbox" id="cbBg_flare2"> Use Background Color</label>
-              <input type="color" id="col_flare2" value="#7fc8ff">
-            </div>
+            <input type="checkbox" id="tgFlares" hidden>
+            <div style="font-size:10px;color:var(--ink-faint);line-height:1.5;margin-bottom:8px">Add as many flares as you like — each has its own position, color and look.</div>
+            <div id="flareList"></div>
+            <button type="button" class="fx-add-btn" id="addFlareBtn" style="margin-top:4px">+ Add flare</button>
           </div>
         </div>
 
@@ -1726,21 +1765,10 @@
         <button class="fx-add-btn" id="fxAddBtn">+ Add effect</button>
         <div class="fx-add-menu" id="fxAddMenu"></div>
       </div>
-
-      <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
-        <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px;">Presets</div>
-        <div class="preset-row">
-          <button id="saveBtn" title="Save the current look (incl. logo) to your account">Save</button>
-          <button id="loadBtn" title="Load a saved preset from your account">Load</button>
-          <button id="resetBtn" title="Reset all settings to defaults">Reset</button>
-        </div>
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 8px; line-height: 1.5;">Saved to your account (settings + logo). Sign in to use presets.</div>
-      </div>
     </div>
 
     <div class="section" data-section="export">
       <h3>Export <span class="num">05</span></h3>
-      <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.6; margin-bottom: 4px;">Resolution, frame rate &amp; quality live in <strong>Settings</strong> (gear icon, bottom right).</div>
 
       <div class="shorts-card">
         <div class="sc-head">
@@ -2217,22 +2245,36 @@ const effectColors = {
   spectrum:  { useBg: true, rgb: [255, 140, 60] },
   ambient:   { useBg: true, rgb: [255, 140, 60] },
   logoglow:  { useBg: true, rgb: [255, 255, 255] }, // useBg === "use logo color"
-  flare1:    { useBg: false, rgb: [127, 200, 255] },
-  flare2:    { useBg: false, rgb: [127, 200, 255] },
 };
 
 // Optical flare positions (normalized 0..1 of the frame). Independent of
 // resolution so preview and render match. `flarePlacing` holds the id of the
 // flare currently being positioned by dragging on the preview ('' = none).
 const flarePos = {
-  flare1: { x: 0.5, y: 0.5 },
-  flare2: { x: 0.5, y: 0.5 },
   image:  { x: 0.5, y: 0.5 },
   text:   { x: 0.5, y: 0.88 },
   specStart: { x: 0.08, y: 0.82 },
   specEnd:   { x: 0.92, y: 0.82 },
 };
+// Spectrum path mode — ordered list of normalized {x,y} points.
+let specPath = [];
+let specPathPlacing = false;
 let flarePlacing = '';
+
+// Output dimensions for the current export resolution (16:9). Used to show the
+// spectrum start/end positions as real pixel values in the numeric inputs.
+function getOutputDims() {
+  const hSel = $('resolution') ? parseInt($('resolution').value) : 1080;
+  const h = hSel || 1080;
+  return { w: Math.round(h * 16 / 9), h };
+}
+// Sync the numeric X/Y inputs from the stored normalized positions.
+function syncSpecNumInputs() {
+  const d = getOutputDims();
+  const set = (id, val) => { const e = $(id); if (e && document.activeElement !== e) e.value = Math.round(val); };
+  set('specStartX', flarePos.specStart.x * d.w); set('specStartY', flarePos.specStart.y * d.h);
+  set('specEndX',   flarePos.specEnd.x   * d.w); set('specEndY',   flarePos.specEnd.y   * d.h);
+}
 
 function hexToRgb(hex) {
   const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
@@ -2240,6 +2282,124 @@ function hexToRgb(hex) {
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
+
+// ============================================================
+// OPTICAL FLARES — unlimited instances managed inside one effect card.
+// Each instance carries its own position, color and per-element look.
+// ============================================================
+let flareInstances = [];
+let flareUid = 1;
+function defaultFlare() {
+  return {
+    id: flareUid++, orient: 'horizontal', intensity: 1, size: 1, opacity: 1,
+    useBg: false, hex: '#7fc8ff', bounce: true, x: 0.5, y: 0.5,
+    glow: 1, streak: 1, ghosts: 1, star: 1,
+  };
+}
+function flareKey(inst) { return 'fl_' + inst.id; }
+function flareColor(inst) { return inst.useBg ? bgPalette.accent : hexToRgb(inst.hex); }
+// Remove any fl_* keys from flarePos (used before rebuilding from a preset).
+function flarePruneFlarePosKeys() {
+  Object.keys(flarePos).forEach(k => { if (k.indexOf('fl_') === 0) delete flarePos[k]; });
+}
+
+function buildFlareInstanceEl(inst) {
+  const key = flareKey(inst);
+  const wrap = document.createElement('div');
+  wrap.className = 'flare-inst';
+  wrap.dataset.key = key;
+  const pct = (v) => Math.round(v * 100);
+  wrap.innerHTML = `
+    <div class="fi-head">
+      <span class="fx-dot"></span><span class="fi-title">Flare</span>
+      <button type="button" class="fi-remove" title="Remove this flare">×</button>
+    </div>
+    <div class="field"><label>Orientation</label>
+      <select class="fx-select" data-k="orient">
+        <option value="horizontal">Horizontal streak</option>
+        <option value="vertical">Vertical streak</option>
+      </select>
+    </div>
+    <div class="field"><label>Intensity <span class="v vIntensity">${pct(inst.intensity)}%</span></label><input type="range" data-k="intensity" min="0" max="200" value="${pct(inst.intensity)}"></div>
+    <div class="field"><label>Size <span class="v vSize">${pct(inst.size)}%</span></label><input type="range" data-k="size" min="20" max="200" value="${pct(inst.size)}"></div>
+    <div class="field"><label>Opacity <span class="v vOpacity">${pct(inst.opacity)}%</span></label><input type="range" data-k="opacity" min="0" max="100" value="${pct(inst.opacity)}"></div>
+    <button type="button" class="fx-posbtn" data-place="${key}">⊕ Set position — drag on preview</button>
+    <label class="cb" style="margin-top:10px"><input type="checkbox" data-k="bounce" ${inst.bounce ? 'checked' : ''}> Bounce relative to center</label>
+    <div class="color-row">
+      <label class="cb"><input type="checkbox" data-k="useBg" ${inst.useBg ? 'checked' : ''}> Use Background Color</label>
+      <input type="color" data-k="hex" value="${inst.hex}" ${inst.useBg ? 'disabled' : ''}>
+    </div>
+    <details class="fi-adv">
+      <summary>Elements</summary>
+      <div class="field"><label>Glow <span class="v vGlow">${pct(inst.glow)}%</span></label><input type="range" data-k="glow" min="0" max="200" value="${pct(inst.glow)}"></div>
+      <div class="field"><label>Streak <span class="v vStreak">${pct(inst.streak)}%</span></label><input type="range" data-k="streak" min="0" max="200" value="${pct(inst.streak)}"></div>
+      <div class="field"><label>Ghosts <span class="v vGhosts">${pct(inst.ghosts)}%</span></label><input type="range" data-k="ghosts" min="0" max="200" value="${pct(inst.ghosts)}"></div>
+      <div class="field"><label>Star <span class="v vStar">${pct(inst.star)}%</span></label><input type="range" data-k="star" min="0" max="200" value="${pct(inst.star)}"></div>
+    </details>`;
+
+  // Orientation
+  const orientSel = wrap.querySelector('[data-k="orient"]');
+  orientSel.value = inst.orient;
+  orientSel.addEventListener('change', () => { inst.orient = orientSel.value; redrawPreviewSafe(); autosaveDebounced(); });
+
+  // Sliders (value 0..200 or 0..100 → fraction)
+  wrap.querySelectorAll('input[type="range"]').forEach(r => {
+    const k = r.dataset.k;
+    const span = wrap.querySelector('.v' + k.charAt(0).toUpperCase() + k.slice(1));
+    r.addEventListener('input', () => {
+      inst[k] = parseFloat(r.value) / 100;
+      if (span) span.textContent = r.value + '%';
+      redrawPreviewSafe(); autosaveDebounced();
+    });
+  });
+
+  // Checkboxes
+  const bounceCb = wrap.querySelector('[data-k="bounce"]');
+  bounceCb.addEventListener('change', () => { inst.bounce = bounceCb.checked; redrawPreviewSafe(); autosaveDebounced(); });
+  const useBgCb = wrap.querySelector('[data-k="useBg"]');
+  const colInp = wrap.querySelector('[data-k="hex"]');
+  useBgCb.addEventListener('change', () => {
+    inst.useBg = useBgCb.checked; colInp.disabled = useBgCb.checked;
+    redrawPreviewSafe(); autosaveDebounced();
+  });
+  colInp.addEventListener('input', () => { inst.hex = colInp.value; redrawPreviewSafe(); autosaveDebounced(); });
+
+  // Position button
+  wrap.querySelector('[data-place]').addEventListener('click', () => setFlarePlacing(key));
+
+  // Remove
+  wrap.querySelector('.fi-remove').addEventListener('click', () => {
+    const idx = flareInstances.indexOf(inst);
+    if (idx >= 0) flareInstances.splice(idx, 1);
+    if (flarePlacing === key) setFlarePlacing(key); // stop placing
+    delete flarePos[key];
+    renderFlareList();
+    redrawPreviewSafe(); autosaveDebounced();
+  });
+
+  return wrap;
+}
+
+function renderFlareList() {
+  const list = $('flareList');
+  if (!list) return;
+  list.innerHTML = '';
+  flareInstances.forEach(inst => {
+    flarePos[flareKey(inst)] = inst;     // ensure position object is registered
+    list.appendChild(buildFlareInstanceEl(inst));
+  });
+}
+
+function addFlareInstance() {
+  const inst = defaultFlare();
+  // Alternate default orientation for variety.
+  if (flareInstances.length % 2 === 1) inst.orient = 'vertical';
+  flareInstances.push(inst);
+  flarePos[flareKey(inst)] = inst;
+  renderFlareList();
+  redrawPreviewSafe(); autosaveDebounced();
+}
+if ($('addFlareBtn')) $('addFlareBtn').addEventListener('click', addFlareInstance);
 
 function fxColor(name) {
   const c = effectColors[name];
@@ -2277,15 +2437,14 @@ async function analyzeLogoPalette(img) {
 [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
   'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset',
-  'specFStart', 'specFEnd', 'specBands', 'specMaxH',
+  'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
-  'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
-  'logoOpacity', 'vigOpacity', 'textOpacity', 'flare1Opacity', 'flare2Opacity', 'specOpacity',
+  'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
@@ -2299,7 +2458,7 @@ async function analyzeLogoPalette(img) {
     else if (id === 'specDur' || id === 'specOff') display.textContent = v + ' ms';
     else if (id === 'shortFadeIn' || id === 'shortFadeOut') display.textContent = parseFloat(v).toFixed(1) + ' s';
     else if (id === 'fadeDur') display.textContent = (v / 10).toFixed(1) + ' s';
-    else if (id === 'mediaRot' || id === 'textRot') display.textContent = v + '°';
+    else if (id === 'mediaRot' || id === 'textRot' || id === 'specAngle') display.textContent = v + '°';
     else display.textContent = v + '%';
   };
   el.addEventListener('input', () => {
@@ -2316,8 +2475,8 @@ async function analyzeLogoPalette(img) {
 });
 
 // Toggle checkboxes — redraw preview on change
-['tgShockwave', 'tgParticles', 'tgSpectrum', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
- 'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror',
+['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
+ 'tgFlares', 'partMirror',
  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeBlurOn', 'rgbReact',
  'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'].forEach(id => {
   const el = $(id);
@@ -2330,7 +2489,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Particle origin / direction + flare orientation + rgb direction — redraw
-['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode'].forEach(id => {
+['partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2362,8 +2521,6 @@ const COLOR_ROWS = [
   { fx: 'spectrum',  cb: 'cbBg_spectrum',  col: 'col_spectrum' },
   { fx: 'ambient',   cb: 'cbBg_ambient',   col: 'col_ambient' },
   { fx: 'logoglow',  cb: 'cbLogoColor',    col: 'col_logoglow' },
-  { fx: 'flare1',    cb: 'cbBg_flare1',    col: 'col_flare1' },
-  { fx: 'flare2',    cb: 'cbBg_flare2',    col: 'col_flare2' },
 ];
 
 function syncColorState(row) {
@@ -2402,8 +2559,7 @@ const FX_TOGGLES = {
   spectrum:  ['tgSpectrum'],
   grain:     ['tgGrain'],
   ambient:   ['tgAmbient'],
-  flare1:    ['tgFlare1'],
-  flare2:    ['tgFlare2'],
+  flares:    ['tgFlares'],
   camerashake: ['tgCameraShake'],
   rgbsplit:  ['tgRgbSplit'],
   image:     ['tgImage'],
@@ -2417,16 +2573,16 @@ const FX_TOGGLES = {
 const FX_TITLES = {
   glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
-  flare1: 'Optical Flare 1', flare2: 'Optical Flare 2',
+  flares: 'Optical Flares',
   camerashake: 'Camera Shake', rgbsplit: 'RGB Split', image: 'Image / Video', fade: 'Fade',
   background: 'Background Image', logo: 'Logo', vignette: 'Vignette', text: 'Text', blur: 'Blur',
 };
-const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flare1', 'flare2', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
+const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flares', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
 
 // LAYER ORDER — a single stack the user can reorder by drag & drop. Read top to
 // bottom = back to front (top card drawn first, bottom drawn last/on top). The
 // Background effect is always forced to the very back regardless of its slot.
-const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flare1', 'flare2', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
+const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flares', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
 let fxOrder = DEFAULT_FX_ORDER.slice();
 function rebuildFxOrder() {
   const stack = $('fxStack');
@@ -2461,10 +2617,9 @@ const AUTOMATABLE = [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig', 'spectrum', 'effects',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
-  'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
-  'logoOpacity', 'vigOpacity', 'textOpacity', 'flare1Opacity', 'flare2Opacity', 'specOpacity',
+  'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ];
 let __autoTime = 0;   // current frame time (seconds) — set at the top of drawFrame
 let __autoBass = 0;   // current bass-keys fill (0..1) — set at the top of drawFrame
@@ -2522,6 +2677,10 @@ function addEffect(fx) {
   if (!card) return;
   card.style.display = '';
   setToggles(fx, true);
+  // Optical Flares starts with one flare so the card isn't empty.
+  if (fx === 'flares' && flareInstances.length === 0 && typeof addFlareInstance === 'function') {
+    addFlareInstance();
+  }
   rebuildAddMenu();
   redrawPreviewSafe();
 }
@@ -3805,8 +3964,6 @@ function drawFrame(ctx, w, h, time, bass) {
   const logoBlend   = $('logoBlend') ? $('logoBlend').value : 'source-over';
   const logoOpacity = $('logoOpacity') ? pval('logoOpacity') / 100 : 1;
   const vigOpacity  = $('vigOpacity') ? pval('vigOpacity') / 100 : 1;
-  const flare1Opacity = $('flare1Opacity') ? pval('flare1Opacity') / 100 : 1;
-  const flare2Opacity = $('flare2Opacity') ? pval('flare2Opacity') / 100 : 1;
   // Logo / Background / Vignette / Text / Fade are now effects too
   const tgBackground = $('tgBackground') ? $('tgBackground').checked : false;
   const tgLogo       = $('tgLogo') ? $('tgLogo').checked : false;
@@ -3904,26 +4061,18 @@ function drawFrame(ctx, w, h, time, bass) {
           drawBurstParticles(ctx, w, h, time, effectsAmt, fxColor('particles'), partOrigin, partDirection, partAmount, partSize, partGlow, partOpacity, partSpeed, partMirror, partMode);
         }
         break;
-      case 'flare1':
-        if ($('tgFlare1') && $('tgFlare1').checked) {
-          drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare1'), {
-            orientation: $('flare1Orient').value,
-            intensity: pval('flare1Int') / 100,
-            size: pval('flare1Size') / 100,
-            bounce: $('cbBounce_flare1').checked,
-            x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch, opacity: flare1Opacity,
-          });
-        }
-        break;
-      case 'flare2':
-        if ($('tgFlare2') && $('tgFlare2').checked) {
-          drawOpticalFlare(ctx, w, h, time, bassAdj, fxColor('flare2'), {
-            orientation: $('flare2Orient').value,
-            intensity: pval('flare2Int') / 100,
-            size: pval('flare2Size') / 100,
-            bounce: $('cbBounce_flare2').checked,
-            x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch, opacity: flare2Opacity,
-          });
+      case 'flares':
+        if ($('tgFlares') && $('tgFlares').checked) {
+          for (const inst of flareInstances) {
+            drawOpticalFlare(ctx, w, h, time, bassAdj, flareColor(inst), {
+              orientation: inst.orient,
+              intensity: inst.intensity,
+              size: inst.size,
+              bounce: inst.bounce,
+              x: inst.x, y: inst.y, punchScale: flarePunch, opacity: inst.opacity,
+              glow: inst.glow, streak: inst.streak, ghosts: inst.ghosts, star: inst.star,
+            });
+          }
         }
         break;
       case 'spectrum':
@@ -4295,24 +4444,33 @@ function drawOpticalFlare(ctx, w, h, time, bassAdj, color, o) {
   const vertical = (o.orientation === 'vertical');
   const minWH = Math.min(w, h);
 
+  // Per-element customization multipliers (default 1 = unchanged). 0 hides it.
+  const mGlow   = (o.glow   == null || isNaN(o.glow))   ? 1 : o.glow;
+  const mStreak = (o.streak == null || isNaN(o.streak)) ? 1 : o.streak;
+  const mGhosts = (o.ghosts == null || isNaN(o.ghosts)) ? 1 : o.ghosts;
+  const mStar   = (o.star   == null || isNaN(o.star))   ? 1 : o.star;
+
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   if (o.opacity != null && !isNaN(o.opacity)) ctx.globalAlpha = Math.max(0, Math.min(1, o.opacity));
 
   // --- 1. Bright core at the flare position ---
-  const coreR = minWH * 0.09 * sizeMul * (0.8 + bassAdj * 0.6);
-  const coreAlpha = intensity * 0.6;
+  const coreR = minWH * 0.09 * sizeMul * (0.8 + bassAdj * 0.6) * (0.4 + 0.6 * mGlow);
+  const coreAlpha = intensity * 0.6 * mGlow;
+  if (mGlow > 0.001) {
   const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, coreR);
   coreGrad.addColorStop(0,    rgba([255, 255, 255], coreAlpha));
   coreGrad.addColorStop(0.25, rgba(color, coreAlpha * 0.8));
   coreGrad.addColorStop(1,    rgba(color, 0));
   ctx.fillStyle = coreGrad;
   ctx.fillRect(px - coreR, py - coreR, coreR * 2, coreR * 2);
+  }
 
   // --- 2. Anamorphic streak (horizontal or vertical through the position) ---
+  if (mStreak > 0.001) {
   const streakLen = (vertical ? h : w) * (0.95 + bassAdj * 0.18) * sizeMul;
   const streakThick = Math.max(2, minWH * 0.012 * sizeMul * (0.7 + bassAdj * 0.6));
-  const streakAlpha = intensity * 0.55;
+  const streakAlpha = intensity * 0.55 * mStreak;
   const gx0 = vertical ? px : px - streakLen / 2;
   const gy0 = vertical ? py - streakLen / 2 : py;
   const gx1 = vertical ? px : px + streakLen / 2;
@@ -4336,13 +4494,15 @@ function drawOpticalFlare(ctx, w, h, time, bassAdj, color, o) {
   const i1y = vertical ? py + len2 / 2 : py;
   const innerGrad = ctx.createLinearGradient(i0x, i0y, i1x, i1y);
   innerGrad.addColorStop(0,   rgba([255, 255, 255], 0));
-  innerGrad.addColorStop(0.5, rgba([255, 255, 255], intensity * 0.85));
+  innerGrad.addColorStop(0.5, rgba([255, 255, 255], intensity * 0.85 * mStreak));
   innerGrad.addColorStop(1,   rgba([255, 255, 255], 0));
   ctx.fillStyle = innerGrad;
   if (vertical) ctx.fillRect(px - thick2 / 2, py - len2 / 2, thick2, len2);
   else          ctx.fillRect(px - len2 / 2, py - thick2 / 2, len2, thick2);
+  }
 
   // --- 3. Ghost chain along the axis from the flare toward frame center ---
+  if (mGhosts > 0.001) {
   const ghosts = [
     { t: -0.5, r: 0.030, alpha: 0.22, tint: 0.4 },
     { t:  0.45, r: 0.045, alpha: 0.26, tint: 0.85 },
@@ -4353,7 +4513,7 @@ function drawOpticalFlare(ctx, w, h, time, bassAdj, color, o) {
     const ggx = px + dirx * g.t;
     const ggy = py + diry * g.t;
     const gr = h * g.r * sizeMul * (0.9 + bassAdj * 0.3);
-    const ga = intensity * g.alpha;
+    const ga = intensity * g.alpha * mGhosts;
     if (ga < 0.01) continue;
     const tintR = Math.round(255 * (1 - g.tint) + color[0] * g.tint);
     const tintG = Math.round(255 * (1 - g.tint) + color[1] * g.tint);
@@ -4365,14 +4525,15 @@ function drawOpticalFlare(ctx, w, h, time, bassAdj, color, o) {
     ctx.fillStyle = grad;
     ctx.fillRect(ggx - gr, ggy - gr, gr * 2, gr * 2);
   }
+  }
 
   // --- 4. Aperture star on strong bass ---
-  if (bassAdj > 0.4) {
+  if (bassAdj > 0.4 && mStar > 0.001) {
     const starBase = (bassAdj - 0.4) / 0.6;
     const spokes = 6;
-    const spokeLen = minWH * 0.5 * sizeMul * starBase;
+    const spokeLen = minWH * 0.5 * sizeMul * starBase * mStar;
     const spokeW = h * 0.004 * (0.7 + bassAdj * 0.4);
-    const spokeAlpha = intensity * starBase * 0.55;
+    const spokeAlpha = intensity * starBase * 0.55 * mStar;
     ctx.save();
     ctx.translate(px, py);
     for (let s = 0; s < spokes; s++) {
@@ -4505,44 +4666,88 @@ function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, mode) {
   }
   specBarLastTime = time;
 
-  // --- Draw the spectrum along the start→end line (After Effects style) ---
-  // The baseline runs from specStart to specEnd; bars rise perpendicular to it.
-  // Single mode grows on one side; mirror mode grows on both sides.
+  // --- Draw the spectrum (After Effects style) ---
+  // Supported shapes: Line (start→end), Polar (around a circle), Path (polyline).
+  // Each bar grows perpendicular to the local baseline; Single = one side,
+  // Mirror = both sides. Flip H/V mirrors the whole thing on screen.
   const color = fxColor('spectrum');
-  const x0 = flarePos.specStart.x * w, y0 = flarePos.specStart.y * h;
-  const x1 = flarePos.specEnd.x * w,   y1 = flarePos.specEnd.y * h;
-  const dx = x1 - x0, dy = y1 - y0;
-  const lineLen = Math.hypot(dx, dy);
-  if (lineLen < 1) return;
-  const angle = Math.atan2(dy, dx);
-
-  const barSlot = lineLen / bands;
-  const barWidth = Math.max(1, barSlot * thicknessPct);
   const maxBarH = h * maxHPct;
-  // Brightness is driven by the Spectrum slider + opacity only — never by bass.
-  const baseAlpha = effectsAmt * specOpacity;
+  const baseAlpha = effectsAmt * specOpacity;   // brightness from slider+opacity, never bass
   const mirror = mode === 'mirror';
+  const shape = $('specShape') ? $('specShape').value : 'line';
+  const flipH = $('specFlipH') && $('specFlipH').checked;
+  const flipV = $('specFlipV') && $('specFlipV').checked;
 
   ctx.save();
-  ctx.translate(x0, y0);
-  ctx.rotate(angle);                 // local +X runs start→end, +Y is "below" the line
   ctx.globalCompositeOperation = 'screen';
+  if (flipH || flipV) {
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+    ctx.translate(-w / 2, -h / 2);
+  }
 
-  for (let i = 0; i < bands; i++) {
-    // bass (band 0) at the start point, highs at the end point
-    const v = specBarSmoothed[i];
-    if (v < 0.005) continue;
-    const barH = maxBarH * v;
-    const lx = i * barSlot + (barSlot - barWidth) / 2;
+  // Draw one bar centered at (px,py), grown along the direction perpendicular to
+  // `ang` (i.e. local -Y after rotating by ang). Mirror adds the opposite side.
+  function bar(px, py, ang, bw, bh, alpha) {
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(ang);
+    drawSpectrumBar(ctx, -bw / 2, -bh, bw, bh, color, alpha, false);
+    if (mirror) drawSpectrumBar(ctx, -bw / 2, 0, bw, bh, color, alpha, true);
+    ctx.restore();
+  }
 
-    // Each bar's brightness comes from its OWN height only — a quiet high band
-    // stays dim even while the kick band is slamming (the After Effects look).
-    const alpha = baseAlpha * (0.4 + 0.6 * v);
-
-    // Grow perpendicular to the line. Single = one side; mirror = both.
-    drawSpectrumBar(ctx, lx, -barH, barWidth, barH, color, alpha, false); // up side, tip away from line
-    if (mirror) {
-      drawSpectrumBar(ctx, lx, 0, barWidth, barH, color, alpha, true);    // down side, tip away from line
+  if (shape === 'polar') {
+    const cx = flarePos.specStart.x * w, cy = flarePos.specStart.y * h;
+    const R = h * (parseFloat($('specRadius') ? $('specRadius').value : 22) / 100);
+    const startA = (parseFloat($('specAngle') ? $('specAngle').value : 0) || 0) * Math.PI / 180;
+    const circ = 2 * Math.PI * Math.max(1, R);
+    const barWidth = Math.max(1, (circ / bands) * thicknessPct);
+    for (let i = 0; i < bands; i++) {
+      const v = specBarSmoothed[i];
+      if (v < 0.005) continue;
+      const barH = maxBarH * v;
+      const theta = startA + 2 * Math.PI * (i / bands);
+      const bx = cx + Math.cos(theta) * R, by = cy + Math.sin(theta) * R;
+      bar(bx, by, theta + Math.PI / 2, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+    }
+  } else if (shape === 'path' && specPath.length >= 2) {
+    const pts = specPath.map(p => ({ x: p.x * w, y: p.y * h }));
+    const segLen = []; let total = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+      segLen.push(l); total += l;
+    }
+    if (total >= 1) {
+      const barWidth = Math.max(1, (total / bands) * thicknessPct);
+      for (let i = 0; i < bands; i++) {
+        const v = specBarSmoothed[i];
+        if (v < 0.005) continue;
+        const barH = maxBarH * v;
+        let d = (i + 0.5) / bands * total, s = 0;
+        while (s < segLen.length - 1 && d > segLen[s]) { d -= segLen[s]; s++; }
+        const t = segLen[s] > 0 ? d / segLen[s] : 0;
+        const a = pts[s], b = pts[s + 1];
+        const px = a.x + (b.x - a.x) * t, py = a.y + (b.y - a.y) * t;
+        const ang = Math.atan2(b.y - a.y, b.x - a.x);
+        bar(px, py, ang, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+      }
+    }
+  } else {
+    // Line (default; also the fallback when Path has fewer than 2 points)
+    const x0 = flarePos.specStart.x * w, y0 = flarePos.specStart.y * h;
+    const x1 = flarePos.specEnd.x * w,   y1 = flarePos.specEnd.y * h;
+    const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+    if (len >= 1) {
+      const ang = Math.atan2(dy, dx);
+      const barWidth = Math.max(1, (len / bands) * thicknessPct);
+      for (let i = 0; i < bands; i++) {
+        const v = specBarSmoothed[i];
+        if (v < 0.005) continue;
+        const barH = maxBarH * v;
+        const d = (i + 0.5) / bands * len;
+        bar(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d, ang, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+      }
     }
   }
 
@@ -5245,7 +5450,32 @@ resizePreview();
 function drawPreviewFrame(time, bass) {
   drawFrame(previewCtx, previewCanvas.width, previewCanvas.height, time, bass);
   drawShortGuide();
+  drawSpecPathGuide();
   drawFlarePlacingGuide();
+}
+
+// Show the spectrum path points/line on the preview while building or editing it.
+function drawSpecPathGuide() {
+  const shape = $('specShape') ? $('specShape').value : 'line';
+  if (!(specPathPlacing || (shape === 'path' && specPath.length))) return;
+  if (!specPath.length) return;
+  const ctx = previewCtx;
+  const w = previewCanvas.width, h = previewCanvas.height;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(95,201,231,0.85)';
+  ctx.fillStyle = 'rgba(95,201,231,0.95)';
+  ctx.lineWidth = Math.max(1, h * 0.0025);
+  ctx.beginPath();
+  specPath.forEach((p, i) => {
+    const px = p.x * w, py = p.y * h;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+  const r = Math.max(3, h * 0.008);
+  specPath.forEach((p) => {
+    ctx.beginPath(); ctx.arc(p.x * w, p.y * h, r, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
 }
 
 // Crosshair shown on the preview while positioning an optical flare by drag.
@@ -5267,7 +5497,8 @@ function drawFlarePlacingGuide() {
   const fs = Math.max(9, Math.round(h * 0.025));
   ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  const lbl = flarePlacing === 'flare1' ? 'FLARE 1' : flarePlacing === 'flare2' ? 'FLARE 2' : flarePlacing === 'text' ? 'TEXT' : flarePlacing === 'specStart' ? 'SPECTRUM START' : flarePlacing === 'specEnd' ? 'SPECTRUM END' : 'IMAGE';
+  const specShapeNow = $('specShape') ? $('specShape').value : 'line';
+  const lbl = (flarePlacing.indexOf('fl_') === 0) ? 'FLARE' : flarePlacing === 'text' ? 'TEXT' : flarePlacing === 'specStart' ? (specShapeNow === 'polar' ? 'CENTER' : 'SPECTRUM START') : flarePlacing === 'specEnd' ? 'SPECTRUM END' : 'IMAGE';
   ctx.fillText(lbl, px, py - r * 1.6);
   ctx.restore();
 }
@@ -5547,12 +5778,16 @@ fxMarkerHit.addEventListener('touchstart', startMarkerDrag, { passive: false });
 // Toggle a flare's "Set position" button, then click/drag anywhere on the
 // preview to move that flare. Position is stored normalized (0..1).
 // ============================================================
-const PLACEABLE = ['flare1', 'flare2', 'image', 'text', 'specStart', 'specEnd'];
+const PLACEABLE = ['image', 'text', 'specStart', 'specEnd'];
 function setFlarePlacing(id) {
   flarePlacing = (flarePlacing === id) ? '' : id;
   PLACEABLE.forEach(f => {
     const b = $('btnPos_' + f);
     if (b) b.classList.toggle('active', flarePlacing === f);
+  });
+  // Dynamic flare-instance position buttons (and the polar "Set center" alias).
+  document.querySelectorAll('.fx-posbtn[data-place]').forEach(b => {
+    b.classList.toggle('active', b.dataset.place === flarePlacing);
   });
   previewCanvas.classList.toggle('flare-placing', !!flarePlacing);
   if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
@@ -5560,6 +5795,58 @@ function setFlarePlacing(id) {
 PLACEABLE.forEach(id => {
   const b = $('btnPos_' + id);
   if (b) b.addEventListener('click', () => setFlarePlacing(id));
+});
+// Polar-mode "Set CENTER" button is an alias for placing specStart.
+if ($('btnPos_specStart2')) $('btnPos_specStart2').addEventListener('click', () => {
+  setFlarePlacing('specStart');
+  $('btnPos_specStart2').classList.toggle('active', flarePlacing === 'specStart');
+});
+
+// ---- Spectrum shape UI: show the controls for the active layout ----
+function updateSpecShapeUI() {
+  const shape = $('specShape') ? $('specShape').value : 'line';
+  const show = (id, on) => { const e = $(id); if (e) e.style.display = on ? '' : 'none'; };
+  show('specLineOpts', shape === 'line');
+  show('specPolarOpts', shape === 'polar');
+  show('specPathOpts', shape === 'path');
+}
+if ($('specShape')) $('specShape').addEventListener('change', updateSpecShapeUI);
+updateSpecShapeUI();
+// Keep the pixel inputs correct on first load and whenever the export resolution changes.
+if ($('resolution')) $('resolution').addEventListener('change', syncSpecNumInputs);
+syncSpecNumInputs();
+
+// ---- Spectrum start/end numeric inputs (pixels at export resolution) ----
+[['specStartX','specStart','x'],['specStartY','specStart','y'],['specEndX','specEnd','x'],['specEndY','specEnd','y']].forEach(([inp, key, axis]) => {
+  const el = $(inp);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const d = getOutputDims();
+    const px = parseFloat(el.value);
+    if (isNaN(px)) return;
+    const norm = axis === 'x' ? px / d.w : px / d.h;
+    flarePos[key][axis] = Math.max(0, Math.min(1, norm));
+    if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
+    autosaveDebounced();
+  });
+});
+
+// ---- Spectrum path build/clear ----
+function updateSpecPathInfo() {
+  const info = $('specPathInfo');
+  if (info) info.textContent = specPath.length + (specPath.length === 1 ? ' point' : ' points');
+}
+if ($('btnSpecPathAdd')) $('btnSpecPathAdd').addEventListener('click', () => {
+  specPathPlacing = !specPathPlacing;
+  flarePlacing = '';
+  $('btnSpecPathAdd').classList.toggle('active', specPathPlacing);
+  previewCanvas.classList.toggle('flare-placing', specPathPlacing);
+});
+if ($('btnSpecPathClear')) $('btnSpecPathClear').addEventListener('click', () => {
+  specPath = [];
+  updateSpecPathInfo();
+  if (state.audioBuffer || state.logoImg || state.bgImg) drawPreviewFrame(getCurrentTime(), getCurrentBass());
+  autosaveDebounced();
 });
 
 let flareDragging = false;
@@ -5570,10 +5857,24 @@ function flarePointerToPos(e) {
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
   flarePos[flarePlacing].x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   flarePos[flarePlacing].y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+  if (flarePlacing === 'specStart' || flarePlacing === 'specEnd') syncSpecNumInputs();
+  drawPreviewFrame(getCurrentTime(), getCurrentBass());
+  autosaveDebounced();
+}
+function specPathAddPoint(e) {
+  const rect = previewCanvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  specPath.push({
+    x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+    y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
+  });
+  updateSpecPathInfo();
   drawPreviewFrame(getCurrentTime(), getCurrentBass());
   autosaveDebounced();
 }
 previewCanvas.addEventListener('mousedown', (e) => {
+  if (specPathPlacing) { e.preventDefault(); specPathAddPoint(e); return; }
   if (!flarePlacing) return;
   e.preventDefault();
   flareDragging = true;
@@ -5582,6 +5883,7 @@ previewCanvas.addEventListener('mousedown', (e) => {
 window.addEventListener('mousemove', (e) => { if (flareDragging) flarePointerToPos(e); });
 window.addEventListener('mouseup', () => { flareDragging = false; });
 previewCanvas.addEventListener('touchstart', (e) => {
+  if (specPathPlacing) { e.preventDefault(); specPathAddPoint(e); return; }
   if (!flarePlacing) return;
   e.preventDefault();
   flareDragging = true;
@@ -7442,19 +7744,18 @@ drawEqWidget();
 const PRESET_SLIDER_IDS = [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
   'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset',
-  'specFStart', 'specFEnd', 'specBands', 'specMaxH',
+  'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
-  'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
-  'logoOpacity', 'vigOpacity', 'textOpacity', 'flare1Opacity', 'flare2Opacity', 'specOpacity',
+  'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ];
 const PRESET_TEXT_IDS = ['textContent'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlares', 'partMirror',
   'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame', 'convertMp4',
   'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'];
 const PRESET_COLOR_IDS = ['fadeColor', 'textColor'];
@@ -7478,10 +7779,11 @@ function gatherPreset() {
     toggles: {},
     keys: { ...bassKeys },
     effects: gatherEffects(),
-    flares: {
-      flare1: { x: flarePos.flare1.x, y: flarePos.flare1.y, bounce: !!($('cbBounce_flare1') && $('cbBounce_flare1').checked) },
-      flare2: { x: flarePos.flare2.x, y: flarePos.flare2.y, bounce: !!($('cbBounce_flare2') && $('cbBounce_flare2').checked) },
-    },
+    flareInstances: flareInstances.map(f => ({
+      orient: f.orient, intensity: f.intensity, size: f.size, opacity: f.opacity,
+      useBg: f.useBg, hex: f.hex, bounce: f.bounce, x: f.x, y: f.y,
+      glow: f.glow, streak: f.streak, ghosts: f.ghosts, star: f.star,
+    })),
     order: fxOrder.slice(),
     bypass: { ...fxBypassed },
     colors2: {},
@@ -7489,6 +7791,7 @@ function gatherPreset() {
     textPos: { x: flarePos.text.x, y: flarePos.text.y },
     specStart: { x: flarePos.specStart.x, y: flarePos.specStart.y },
     specEnd: { x: flarePos.specEnd.x, y: flarePos.specEnd.y },
+    specPath: specPath.map(p => ({ x: p.x, y: p.y })),
     automations: JSON.parse(JSON.stringify(automations)),
   };
   PRESET_COLOR_IDS.forEach(id => {
@@ -7602,17 +7905,44 @@ function applyPreset(preset, silent) {
   // NOT read from presets. It stays exactly where you placed it, independent of
   // loading or resetting presets.
 
-  // Optical flare positions + bounce
-  if (preset.flares) {
-    ['flare1', 'flare2'].forEach(fid => {
+  // Optical flares — new unlimited-instance format, with migration from the old
+  // two-flare format (preset.flares.flare1 / .flare2 + flare1Int sliders etc).
+  flareInstances = [];
+  flarePruneFlarePosKeys();
+  if (Array.isArray(preset.flareInstances)) {
+    preset.flareInstances.forEach(f => {
+      const inst = defaultFlare();
+      if (f && typeof f === 'object') {
+        if (f.orient === 'vertical' || f.orient === 'horizontal') inst.orient = f.orient;
+        ['intensity', 'size', 'opacity', 'x', 'y', 'glow', 'streak', 'ghosts', 'star'].forEach(k => {
+          if (typeof f[k] === 'number') inst[k] = f[k];
+        });
+        if (typeof f.useBg === 'boolean') inst.useBg = f.useBg;
+        if (typeof f.bounce === 'boolean') inst.bounce = f.bounce;
+        if (typeof f.hex === 'string') inst.hex = f.hex;
+      }
+      flareInstances.push(inst);
+      flarePos[flareKey(inst)] = inst;
+    });
+  } else if (preset.flares) {
+    // Legacy: rebuild two instances from the old flare1/flare2 fields.
+    [['flare1', 'horizontal'], ['flare2', 'vertical']].forEach(([fid, orient]) => {
       const f = preset.flares[fid];
       if (!f) return;
-      if (typeof f.x === 'number') flarePos[fid].x = Math.max(0, Math.min(1, f.x));
-      if (typeof f.y === 'number') flarePos[fid].y = Math.max(0, Math.min(1, f.y));
-      const cb = $('cbBounce_' + fid);
-      if (cb && typeof f.bounce === 'boolean') cb.checked = f.bounce;
+      const inst = defaultFlare();
+      inst.orient = orient;
+      if (typeof f.x === 'number') inst.x = Math.max(0, Math.min(1, f.x));
+      if (typeof f.y === 'number') inst.y = Math.max(0, Math.min(1, f.y));
+      if (typeof f.bounce === 'boolean') inst.bounce = f.bounce;
+      const sl = preset.sliders || {};
+      if (sl[fid + 'Int']) inst.intensity = parseFloat(sl[fid + 'Int']) / 100;
+      if (sl[fid + 'Size']) inst.size = parseFloat(sl[fid + 'Size']) / 100;
+      if (sl[fid + 'Opacity']) inst.opacity = parseFloat(sl[fid + 'Opacity']) / 100;
+      flareInstances.push(inst);
+      flarePos[flareKey(inst)] = inst;
     });
   }
+  renderFlareList();
 
   // Layer order (drag & drop). Reorder the DOM cards to match, then refresh.
   if (Array.isArray(preset.order) && preset.order.length) {
@@ -7652,6 +7982,13 @@ function applyPreset(preset, silent) {
     if (typeof preset.specEnd.x === 'number') flarePos.specEnd.x = Math.max(0, Math.min(1, preset.specEnd.x));
     if (typeof preset.specEnd.y === 'number') flarePos.specEnd.y = Math.max(0, Math.min(1, preset.specEnd.y));
   }
+  specPath = Array.isArray(preset.specPath)
+    ? preset.specPath.filter(p => p && typeof p.x === 'number' && typeof p.y === 'number')
+                     .map(p => ({ x: Math.max(0, Math.min(1, p.x)), y: Math.max(0, Math.min(1, p.y)) }))
+    : [];
+  if (typeof updateSpecShapeUI === 'function') updateSpecShapeUI();
+  if (typeof updateSpecPathInfo === 'function') updateSpecPathInfo();
+  if (typeof syncSpecNumInputs === 'function') syncSpecNumInputs();
 
   // Automations (time keyframes / sound). Replace wholesale when present.
   if (preset.automations && typeof preset.automations === 'object') {
@@ -7831,32 +8168,31 @@ function getDefaultPreset() {
       spectrum: '70', effects: '85', crf: '23',
       shockThresh: '50', shockReset: '5',
       specFStart: '20', specFEnd: '8000', specBands: '48',
-      specMaxH: '22', specDur: '100', specOff: '0',
+      specMaxH: '22', specRadius: '22', specAngle: '0', specDur: '100', specOff: '0',
       specThick: '55', specSmooth: '30',
       shortFadeIn: '1', shortFadeOut: '3',
       glowBgInt: '100', glowBgSize: '100', logoGlowInt: '100', logoGlowSize: '100',
       grainAmt: '50',
       partAmount: '24', partSize: '100', partGlow: '100', partOpacity: '100', partSpeed: '100',
-      flare1Int: '100', flare1Size: '100', flare2Int: '100', flare2Size: '100',
       shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100',
       fadeDur: '15', fadeBlurStr: '50',
       textSize: '100', textRot: '0', blurStr: '40',
-      logoOpacity: '100', vigOpacity: '100', textOpacity: '100', flare1Opacity: '100', flare2Opacity: '100', specOpacity: '100',
+      logoOpacity: '100', vigOpacity: '100', textOpacity: '100', specOpacity: '100',
     },
     text: { textContent: '' },
     selects: {
       fontStyle: 'cormorant', resolution: '1080', framerate: '60',
       partOrigin: 'middle', partDirection: 'center',
-      flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal', partMode: 'burst',
+      rgbDir: 'horizontal', partMode: 'burst',
       textAlign: 'center', logoBlend: 'source-over', mediaBlend: 'source-over',
-      specMode: 'single',
+      specMode: 'single', specShape: 'line',
     },
     toggles: {
       tgShockwave: false, tgParticles: false,
-      tgSpectrum: false,
+      tgSpectrum: false, specFlipH: false, specFlipV: false,
       tgGrain: false, tgAmbient: false,
       tgGlowBg: false, tgLogoGlow: false,
-      tgFlare1: false, tgFlare2: false,
+      tgFlares: false,
       partMirror: false,
       tgCameraShake: false, tgRgbSplit: false, tgImage: false, tgFade: false,
       fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
@@ -7874,14 +8210,9 @@ function getDefaultPreset() {
         spectrum: { useBg: true, hex: '#ff8c3c' },
         ambient: { useBg: true, hex: '#ff8c3c' },
         logoglow: { useBg: true, hex: '#ffffff' },
-        flare1: { useBg: false, hex: '#7fc8ff' },
-        flare2: { useBg: false, hex: '#7fc8ff' },
       },
     },
-    flares: {
-      flare1: { x: 0.5, y: 0.5, bounce: true },
-      flare2: { x: 0.5, y: 0.5, bounce: true },
-    },
+    flareInstances: [],
     order: DEFAULT_FX_ORDER.slice(),
     colors2: { fadeColor: '#000000', textColor: '#ffffff' },
     mediaPos: { x: 0.5, y: 0.5 },

@@ -1382,6 +1382,7 @@
             </label>
             <div class="field"><label>Logo Size <span class="v" id="logoSizeV">110%</span></label><input type="range" id="logoSize" min="30" max="200" value="110" /></div>
             <div class="field"><label>Logo Bounce <span class="v" id="logoBounceV">100%</span></label><input type="range" id="logoBounce" min="0" max="200" value="100" /></div>
+            <div class="field"><label>Opacity <span class="v" id="logoOpacityV">100%</span></label><input type="range" id="logoOpacity" min="0" max="100" value="100" /></div>
             <div class="field"><label>Blend Mode</label>
               <select id="logoBlend" class="fx-select">
                 <option value="source-over" selected>Normal</option>
@@ -1411,6 +1412,7 @@
           <div class="fx-body">
             <input type="checkbox" id="tgVignette" hidden>
             <div class="field"><label>Strength <span class="v" id="vigV">100%</span></label><input type="range" id="vig" min="0" max="100" value="100" /><div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Opens up on bass</div></div>
+            <div class="field"><label>Opacity <span class="v" id="vigOpacityV">100%</span></label><input type="range" id="vigOpacity" min="0" max="100" value="100" /></div>
           </div>
         </div>
 
@@ -1438,6 +1440,7 @@
             </div>
             <div class="field"><label>Size <span class="v" id="textSizeV">100%</span></label><input type="range" id="textSize" min="20" max="300" value="100" /></div>
             <div class="field"><label>Rotation <span class="v" id="textRotV">0°</span></label><input type="range" id="textRot" min="-180" max="180" value="0" /></div>
+            <div class="field"><label>Opacity <span class="v" id="textOpacityV">100%</span></label><input type="range" id="textOpacity" min="0" max="100" value="100" /></div>
             <button type="button" class="fx-posbtn" id="btnPos_text">⊕ Set position — drag on preview</button>
             <button type="button" class="fx-posbtn" id="textCenter" style="margin-top:8px">⊕ Center horizontally</button>
             <div class="color-row">
@@ -1532,12 +1535,19 @@
         <div class="effect-card" data-effect="spectrum">
           <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Audio Spectrum</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
-            <div class="toggles" style="margin-bottom:10px">
-              <label><input type="checkbox" id="tgSpecTop" checked><span>Top</span></label>
-              <label><input type="checkbox" id="tgSpecBot" checked><span>Bottom</span></label>
+            <input type="checkbox" id="tgSpectrum" checked hidden>
+            <div class="field"><label>Mode</label>
+              <select id="specMode" class="fx-select">
+                <option value="single" selected>Single side</option>
+                <option value="mirror">Mirror (both sides)</option>
+              </select>
             </div>
             <div class="field"><label>Amount <span class="v" id="spectrumV">70%</span></label><input type="range" id="spectrum" min="0" max="100" value="70" /></div>
-            <div class="field"><label>Max Height <span class="v" id="specMaxHV">22%</span></label><input type="range" id="specMaxH" min="5" max="40" value="22" /></div>
+            <div class="field"><label>Max Height <span class="v" id="specMaxHV">22%</span></label><input type="range" id="specMaxH" min="5" max="50" value="22" /></div>
+            <div class="field"><label>Opacity <span class="v" id="specOpacityV">100%</span></label><input type="range" id="specOpacity" min="0" max="100" value="100" /></div>
+            <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.4; margin: 6px 0;">The spectrum is drawn along the line between a start and end point — drag them on the preview.</div>
+            <button type="button" class="fx-posbtn" id="btnPos_specStart">⊕ Set START point</button>
+            <button type="button" class="fx-posbtn" id="btnPos_specEnd" style="margin-top:8px">⊕ Set END point</button>
             <div class="color-row">
               <label class="cb"><input type="checkbox" id="cbBg_spectrum" checked> Use Background Color</label>
               <input type="color" id="col_spectrum" value="#ff8c3c" disabled>
@@ -1588,6 +1598,7 @@
             </div>
             <div class="field"><label>Intensity <span class="v" id="flare1IntV">100%</span></label><input type="range" id="flare1Int" min="0" max="200" value="100" /></div>
             <div class="field"><label>Size <span class="v" id="flare1SizeV">100%</span></label><input type="range" id="flare1Size" min="20" max="200" value="100" /></div>
+            <div class="field"><label>Opacity <span class="v" id="flare1OpacityV">100%</span></label><input type="range" id="flare1Opacity" min="0" max="100" value="100" /></div>
             <button type="button" class="fx-posbtn" id="btnPos_flare1">⊕ Set position — drag on preview</button>
             <label class="cb" style="margin-top:10px"><input type="checkbox" id="cbBounce_flare1" checked> Bounce relative to center</label>
             <div class="color-row">
@@ -1609,6 +1620,7 @@
             </div>
             <div class="field"><label>Intensity <span class="v" id="flare2IntV">100%</span></label><input type="range" id="flare2Int" min="0" max="200" value="100" /></div>
             <div class="field"><label>Size <span class="v" id="flare2SizeV">100%</span></label><input type="range" id="flare2Size" min="20" max="200" value="100" /></div>
+            <div class="field"><label>Opacity <span class="v" id="flare2OpacityV">100%</span></label><input type="range" id="flare2Opacity" min="0" max="100" value="100" /></div>
             <button type="button" class="fx-posbtn" id="btnPos_flare2">⊕ Set position — drag on preview</button>
             <label class="cb" style="margin-top:10px"><input type="checkbox" id="cbBounce_flare2" checked> Bounce relative to center</label>
             <div class="color-row">
@@ -1728,33 +1740,7 @@
 
     <div class="section" data-section="export">
       <h3>Export <span class="num">05</span></h3>
-      <div class="field">
-        <label>Resolution</label>
-        <select id="resolution">
-          <option value="1080">Full HD · 1920×1080</option>
-          <option value="720">HD · 1280×720</option>
-          <option value="2160">4K · 3840×2160 (slow)</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Frame Rate</label>
-        <select id="framerate">
-          <option value="60">60 fps</option>
-          <option value="30">30 fps</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Quality (CRF) <span class="v" id="crfV">23</span></label>
-        <input type="range" id="crf" min="18" max="30" value="23" />
-      </div>
-      <div class="field">
-        <div class="toggles"><label><input type="checkbox" id="frameByFrame" checked><span>Frame-by-frame rendering</span></label></div>
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Renders every frame exactly (no real-time capture) — recommended. Uncheck to allow the legacy real-time recorder as a fallback if your browser can't render offline.</div>
-      </div>
-      <div class="field">
-        <div class="toggles"><label><input type="checkbox" id="convertMp4"><span>Convert WebM output to MP4</span></label></div>
-        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Only relevant on browsers that export WebM (e.g. Firefox). Re-encodes to MP4 in your browser — accurate but <strong>slow</strong>. Leave off for the fastest export; WebM plays everywhere and imports into editors &amp; social uploads.</div>
-      </div>
+      <div style="font-size: 10px; color: var(--ink-faint); line-height: 1.6; margin-bottom: 4px;">Resolution, frame rate &amp; quality live in <strong>Settings</strong> (gear icon, bottom right).</div>
 
       <div class="shorts-card">
         <div class="sc-head">
@@ -1814,6 +1800,7 @@
     </div>
     <div class="vu" id="vuMeter"></div>
     <button class="btn" id="playBtn" disabled><span class="ico play"></span><span id="playLabel">Play</span></button>
+    <button class="btn" id="settingsBtn" title="Render settings" aria-label="Render settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="btn primary" id="renderBtn" disabled><span class="ico dot"></span>Render MP4</button>
   </div>
 
@@ -1830,6 +1817,44 @@
     <div class="export-actions">
       <button class="btn" id="exportCancelBtn">Cancel</button>
       <button class="btn primary" id="exportConfirmBtn">Render</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS DIALOG (render options) -->
+<div class="export-modal" id="settingsModal">
+  <div class="export-card" style="width: min(460px, 92vw); max-height: 88vh; overflow-y: auto;">
+    <h3>Render settings</h3>
+    <p class="sub">Output options for your main render.</p>
+    <div class="field">
+      <label>Resolution</label>
+      <select id="resolution">
+        <option value="1080">Full HD · 1920×1080</option>
+        <option value="720">HD · 1280×720</option>
+        <option value="2160">4K · 3840×2160 (slow)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Frame Rate</label>
+      <select id="framerate">
+        <option value="60">60 fps</option>
+        <option value="30">30 fps</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Quality (CRF) <span class="v" id="crfV">23</span></label>
+      <input type="range" id="crf" min="18" max="30" value="23" />
+    </div>
+    <div class="field">
+      <div class="toggles"><label><input type="checkbox" id="frameByFrame" checked><span>Frame-by-frame rendering</span></label></div>
+      <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Renders every frame exactly (no real-time capture) — recommended. Uncheck to allow the legacy real-time recorder as a fallback if your browser can't render offline.</div>
+    </div>
+    <div class="field">
+      <div class="toggles"><label><input type="checkbox" id="convertMp4"><span>Convert WebM output to MP4</span></label></div>
+      <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Only relevant on browsers that export WebM (e.g. Firefox). Re-encodes to MP4 in your browser — accurate but <strong>slow</strong>. Leave off for the fastest export; WebM plays everywhere and imports into editors &amp; social uploads.</div>
+    </div>
+    <div class="export-actions">
+      <button class="btn primary" id="settingsCloseBtn">Done</button>
     </div>
   </div>
 </div>
@@ -2204,6 +2229,8 @@ const flarePos = {
   flare2: { x: 0.5, y: 0.5 },
   image:  { x: 0.5, y: 0.5 },
   text:   { x: 0.5, y: 0.88 },
+  specStart: { x: 0.08, y: 0.82 },
+  specEnd:   { x: 0.92, y: 0.82 },
 };
 let flarePlacing = '';
 
@@ -2258,6 +2285,7 @@ async function analyzeLogoPalette(img) {
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
+  'logoOpacity', 'vigOpacity', 'textOpacity', 'flare1Opacity', 'flare2Opacity', 'specOpacity',
 ].forEach(id => {
   const el = $(id);
   const display = $(id + 'V');
@@ -2288,7 +2316,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Toggle checkboxes — redraw preview on change
-['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
+['tgShockwave', 'tgParticles', 'tgSpectrum', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
  'tgFlare1', 'tgFlare2', 'cbBounce_flare1', 'cbBounce_flare2', 'partMirror',
  'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeBlurOn', 'rgbReact',
  'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'].forEach(id => {
@@ -2302,7 +2330,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Particle origin / direction + flare orientation + rgb direction — redraw
-['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend'].forEach(id => {
+['partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2371,7 +2399,7 @@ const FX_TOGGLES = {
   shockwave: ['tgShockwave'],
   logoglow:  ['tgLogoGlow'],
   particles: ['tgParticles'],
-  spectrum:  ['tgSpecTop', 'tgSpecBot'],
+  spectrum:  ['tgSpectrum'],
   grain:     ['tgGrain'],
   ambient:   ['tgAmbient'],
   flare1:    ['tgFlare1'],
@@ -2436,6 +2464,7 @@ const AUTOMATABLE = [
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
+  'logoOpacity', 'vigOpacity', 'textOpacity', 'flare1Opacity', 'flare2Opacity', 'specOpacity',
 ];
 let __autoTime = 0;   // current frame time (seconds) — set at the top of drawFrame
 let __autoBass = 0;   // current bass-keys fill (0..1) — set at the top of drawFrame
@@ -3740,8 +3769,8 @@ function drawFrame(ctx, w, h, time, bass) {
   // Effect on/off toggles
   const tgShockwave = $('tgShockwave').checked;
   const tgParticles = $('tgParticles').checked;
-  const tgSpecTop   = $('tgSpecTop').checked;
-  const tgSpecBot   = $('tgSpecBot').checked;
+  const tgSpectrum  = $('tgSpectrum').checked;
+  const specMode    = $('specMode') ? $('specMode').value : 'single';
   const tgGrain     = $('tgGrain').checked;
   const tgAmbient   = $('tgAmbient').checked;
   const tgGlowBg    = $('tgGlowBg').checked;
@@ -3774,6 +3803,10 @@ function drawFrame(ctx, w, h, time, bass) {
   const mediaOpacity= $('mediaOpacity') ? pval('mediaOpacity') / 100 : 1;
   const mediaBlend  = $('mediaBlend') ? $('mediaBlend').value : 'source-over';
   const logoBlend   = $('logoBlend') ? $('logoBlend').value : 'source-over';
+  const logoOpacity = $('logoOpacity') ? pval('logoOpacity') / 100 : 1;
+  const vigOpacity  = $('vigOpacity') ? pval('vigOpacity') / 100 : 1;
+  const flare1Opacity = $('flare1Opacity') ? pval('flare1Opacity') / 100 : 1;
+  const flare2Opacity = $('flare2Opacity') ? pval('flare2Opacity') / 100 : 1;
   // Logo / Background / Vignette / Text / Fade are now effects too
   const tgBackground = $('tgBackground') ? $('tgBackground').checked : false;
   const tgLogo       = $('tgLogo') ? $('tgLogo').checked : false;
@@ -3878,7 +3911,7 @@ function drawFrame(ctx, w, h, time, bass) {
             intensity: pval('flare1Int') / 100,
             size: pval('flare1Size') / 100,
             bounce: $('cbBounce_flare1').checked,
-            x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch,
+            x: flarePos.flare1.x, y: flarePos.flare1.y, punchScale: flarePunch, opacity: flare1Opacity,
           });
         }
         break;
@@ -3889,13 +3922,13 @@ function drawFrame(ctx, w, h, time, bass) {
             intensity: pval('flare2Int') / 100,
             size: pval('flare2Size') / 100,
             bounce: $('cbBounce_flare2').checked,
-            x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch,
+            x: flarePos.flare2.x, y: flarePos.flare2.y, punchScale: flarePunch, opacity: flare2Opacity,
           });
         }
         break;
       case 'spectrum':
-        if (tgSpecTop || tgSpecBot) {
-          drawMirrorSpectrum(ctx, w, h, time, bassAdj, spectrumAmt, tgSpecTop, tgSpecBot);
+        if (tgSpectrum) {
+          drawMirrorSpectrum(ctx, w, h, time, bassAdj, spectrumAmt, specMode);
         }
         break;
       case 'grain':
@@ -3924,13 +3957,14 @@ function drawFrame(ctx, w, h, time, bass) {
         if (tgLogo && state.logoImg) {
           ctx.save();
           ctx.globalCompositeOperation = logoBlend;
+          ctx.globalAlpha = logoOpacity;
           drawLogoWithAberration(ctx, cx, cy, logoW, logoH, impulseAdj, effectsAmt, glowColor);
           ctx.restore();
         }
         break;
       case 'vignette':
         if (tgVignette && vigStrength > 0) {
-          const dynamicVig = vigStrength * (1 - Math.min(1, bassAdj * 1.2) * 0.5);
+          const dynamicVig = vigStrength * (1 - Math.min(1, bassAdj * 1.2) * 0.5) * vigOpacity;
           if (dynamicVig > 0.01) {
             const vGrad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
             vGrad.addColorStop(0, 'rgba(0,0,0,0)');
@@ -4263,6 +4297,7 @@ function drawOpticalFlare(ctx, w, h, time, bassAdj, color, o) {
 
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
+  if (o.opacity != null && !isNaN(o.opacity)) ctx.globalAlpha = Math.max(0, Math.min(1, o.opacity));
 
   // --- 1. Bright core at the flare position ---
   const coreR = minWH * 0.09 * sizeMul * (0.8 + bassAdj * 0.6);
@@ -4378,10 +4413,11 @@ let specBarLastBands = 0;
 // to show broadband content, loud enough that noise floor stays hidden.
 const SPEC_DB_FLOOR = -60;
 
-function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, drawTop, drawBot) {
+function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, mode) {
   if (effectsAmt < 0.01) return;
   if (!spectrogram) return;
-  if (!drawTop && !drawBot) return;
+  const specOpacity = $('specOpacity') ? pval('specOpacity') / 100 : 1;
+  if (specOpacity <= 0.001) return;
 
   // --- Read user parameters ---
   const fStart = Math.max(0, parseFloat($('specFStart').value));
@@ -4469,45 +4505,44 @@ function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, drawTop, drawB
   }
   specBarLastTime = time;
 
-  // --- Draw the four mirrored spectrums ---
+  // --- Draw the spectrum along the start→end line (After Effects style) ---
+  // The baseline runs from specStart to specEnd; bars rise perpendicular to it.
+  // Single mode grows on one side; mirror mode grows on both sides.
   const color = fxColor('spectrum');
-  const halfW = w / 2;
-  const barSlot = halfW / bands;
+  const x0 = flarePos.specStart.x * w, y0 = flarePos.specStart.y * h;
+  const x1 = flarePos.specEnd.x * w,   y1 = flarePos.specEnd.y * h;
+  const dx = x1 - x0, dy = y1 - y0;
+  const lineLen = Math.hypot(dx, dy);
+  if (lineLen < 1) return;
+  const angle = Math.atan2(dy, dx);
+
+  const barSlot = lineLen / bands;
   const barWidth = Math.max(1, barSlot * thicknessPct);
   const maxBarH = h * maxHPct;
-  // Brightness is driven by the Spectrum slider ONLY — never by bass.
-  // (Previously bass energy was folded in here, so every bar — highs included —
-  //  flashed on each kick. That was the main reason the spectrum didn't read
-  //  per-element like After Effects.)
-  const baseAlpha = effectsAmt;
+  // Brightness is driven by the Spectrum slider + opacity only — never by bass.
+  const baseAlpha = effectsAmt * specOpacity;
+  const mirror = mode === 'mirror';
 
   ctx.save();
+  ctx.translate(x0, y0);
+  ctx.rotate(angle);                 // local +X runs start→end, +Y is "below" the line
   ctx.globalCompositeOperation = 'screen';
 
   for (let i = 0; i < bands; i++) {
-    // Flip: bass (band 0) at outer edges, highs (band N-1) meet in middle
-    const bandIdx = bands - 1 - i;
-    const v = specBarSmoothed[bandIdx];
+    // bass (band 0) at the start point, highs at the end point
+    const v = specBarSmoothed[i];
     if (v < 0.005) continue;
     const barH = maxBarH * v;
-
-    const xRight = halfW + i * barSlot + (barSlot - barWidth) / 2;
-    const xLeft  = halfW - (i + 1) * barSlot + (barSlot - barWidth) / 2;
+    const lx = i * barSlot + (barSlot - barWidth) / 2;
 
     // Each bar's brightness comes from its OWN height only — a quiet high band
-    // stays dim even while the kick band is slamming. This is the key to the
-    // "you can read every element" look from After Effects.
+    // stays dim even while the kick band is slamming (the After Effects look).
     const alpha = baseAlpha * (0.4 + 0.6 * v);
 
-    // Top (growing down)
-    if (drawTop) {
-      drawSpectrumBar(ctx, xRight, 0, barWidth, barH, color, alpha, true);
-      drawSpectrumBar(ctx, xLeft,  0, barWidth, barH, color, alpha, true);
-    }
-    // Bottom (growing up)
-    if (drawBot) {
-      drawSpectrumBar(ctx, xRight, h - barH, barWidth, barH, color, alpha, false);
-      drawSpectrumBar(ctx, xLeft,  h - barH, barWidth, barH, color, alpha, false);
+    // Grow perpendicular to the line. Single = one side; mirror = both.
+    drawSpectrumBar(ctx, lx, -barH, barWidth, barH, color, alpha, false); // up side, tip away from line
+    if (mirror) {
+      drawSpectrumBar(ctx, lx, 0, barWidth, barH, color, alpha, true);    // down side, tip away from line
     }
   }
 
@@ -5040,11 +5075,14 @@ function drawTextEffect(ctx, w, h, bassAdj, highAdj) {
   const sizeMul = $('textSize') ? pval('textSize') / 100 : 1;
   const rot = $('textRot') ? pval('textRot') : 0;
   const color = ($('textColor') ? $('textColor').value : '#ffffff');
+  const opacity = $('textOpacity') ? pval('textOpacity') / 100 : 1;
+  if (opacity <= 0.001) return;
   const px = flarePos.text.x * w, py = flarePos.text.y * h;
   const size = h * 0.05 * sizeMul;
   const lines = content.split('\n');
 
   ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
   ctx.translate(px, py);
   if (rot) ctx.rotate(rot * Math.PI / 180);
   ctx.textBaseline = 'middle';
@@ -5229,7 +5267,7 @@ function drawFlarePlacingGuide() {
   const fs = Math.max(9, Math.round(h * 0.025));
   ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  const lbl = flarePlacing === 'flare1' ? 'FLARE 1' : flarePlacing === 'flare2' ? 'FLARE 2' : flarePlacing === 'text' ? 'TEXT' : 'IMAGE';
+  const lbl = flarePlacing === 'flare1' ? 'FLARE 1' : flarePlacing === 'flare2' ? 'FLARE 2' : flarePlacing === 'text' ? 'TEXT' : flarePlacing === 'specStart' ? 'SPECTRUM START' : flarePlacing === 'specEnd' ? 'SPECTRUM END' : 'IMAGE';
   ctx.fillText(lbl, px, py - r * 1.6);
   ctx.restore();
 }
@@ -5509,7 +5547,7 @@ fxMarkerHit.addEventListener('touchstart', startMarkerDrag, { passive: false });
 // Toggle a flare's "Set position" button, then click/drag anywhere on the
 // preview to move that flare. Position is stored normalized (0..1).
 // ============================================================
-const PLACEABLE = ['flare1', 'flare2', 'image', 'text'];
+const PLACEABLE = ['flare1', 'flare2', 'image', 'text', 'specStart', 'specEnd'];
 function setFlarePlacing(id) {
   flarePlacing = (flarePlacing === id) ? '' : id;
   PLACEABLE.forEach(f => {
@@ -6110,6 +6148,13 @@ function closeExportDialog() { $('exportModal').classList.remove('show'); }
 $('exportCancelBtn').addEventListener('click', closeExportDialog);
 $('exportModal').addEventListener('click', (e) => { if (e.target === $('exportModal')) closeExportDialog(); });
 $('exportName').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('exportConfirmBtn').click(); } });
+
+// Settings modal (render options) — opened by the gear button in the bottom bar.
+function openSettings() { $('settingsModal').classList.add('show'); }
+function closeSettings() { $('settingsModal').classList.remove('show'); }
+$('settingsBtn').addEventListener('click', openSettings);
+$('settingsCloseBtn').addEventListener('click', closeSettings);
+$('settingsModal').addEventListener('click', (e) => { if (e.target === $('settingsModal')) closeSettings(); });
 
 $('exportConfirmBtn').addEventListener('click', async () => {
   let name = ($('exportName').value || '').trim().replace(/[\\/:*?"<>|\n\r\t]+/g, '_').replace(/\.+$/, '');
@@ -7405,10 +7450,11 @@ const PRESET_SLIDER_IDS = [
   'flare1Int', 'flare1Size', 'flare2Int', 'flare2Size',
   'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
+  'logoOpacity', 'vigOpacity', 'textOpacity', 'flare1Opacity', 'flare2Opacity', 'specOpacity',
 ];
 const PRESET_TEXT_IDS = ['textContent'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpecTop', 'tgSpecBot', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'flare1Orient', 'flare2Orient', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlare1', 'tgFlare2', 'partMirror',
   'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame', 'convertMp4',
   'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'];
 const PRESET_COLOR_IDS = ['fadeColor', 'textColor'];
@@ -7441,6 +7487,8 @@ function gatherPreset() {
     colors2: {},
     mediaPos: { x: flarePos.image.x, y: flarePos.image.y },
     textPos: { x: flarePos.text.x, y: flarePos.text.y },
+    specStart: { x: flarePos.specStart.x, y: flarePos.specStart.y },
+    specEnd: { x: flarePos.specEnd.x, y: flarePos.specEnd.y },
     automations: JSON.parse(JSON.stringify(automations)),
   };
   PRESET_COLOR_IDS.forEach(id => {
@@ -7468,11 +7516,7 @@ function gatherPreset() {
 
 function setTogglesQuiet(fx, on) {
   if (on) {
-    if (fx === 'spectrum') {
-      if (!$('tgSpecTop').checked && !$('tgSpecBot').checked) $('tgSpecTop').checked = true;
-    } else {
-      FX_TOGGLES[fx].forEach(tid => { const e = $(tid); if (e) e.checked = true; });
-    }
+    FX_TOGGLES[fx].forEach(tid => { const e = $(tid); if (e) e.checked = true; });
   } else {
     FX_TOGGLES[fx].forEach(tid => { const e = $(tid); if (e) e.checked = false; });
   }
@@ -7599,6 +7643,14 @@ function applyPreset(preset, silent) {
   if (preset.textPos) {
     if (typeof preset.textPos.x === 'number') flarePos.text.x = Math.max(0, Math.min(1, preset.textPos.x));
     if (typeof preset.textPos.y === 'number') flarePos.text.y = Math.max(0, Math.min(1, preset.textPos.y));
+  }
+  if (preset.specStart) {
+    if (typeof preset.specStart.x === 'number') flarePos.specStart.x = Math.max(0, Math.min(1, preset.specStart.x));
+    if (typeof preset.specStart.y === 'number') flarePos.specStart.y = Math.max(0, Math.min(1, preset.specStart.y));
+  }
+  if (preset.specEnd) {
+    if (typeof preset.specEnd.x === 'number') flarePos.specEnd.x = Math.max(0, Math.min(1, preset.specEnd.x));
+    if (typeof preset.specEnd.y === 'number') flarePos.specEnd.y = Math.max(0, Math.min(1, preset.specEnd.y));
   }
 
   // Automations (time keyframes / sound). Replace wholesale when present.
@@ -7789,6 +7841,7 @@ function getDefaultPreset() {
       shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100',
       fadeDur: '15', fadeBlurStr: '50',
       textSize: '100', textRot: '0', blurStr: '40',
+      logoOpacity: '100', vigOpacity: '100', textOpacity: '100', flare1Opacity: '100', flare2Opacity: '100', specOpacity: '100',
     },
     text: { textContent: '' },
     selects: {
@@ -7796,10 +7849,11 @@ function getDefaultPreset() {
       partOrigin: 'middle', partDirection: 'center',
       flare1Orient: 'horizontal', flare2Orient: 'vertical', rgbDir: 'horizontal', partMode: 'burst',
       textAlign: 'center', logoBlend: 'source-over', mediaBlend: 'source-over',
+      specMode: 'single',
     },
     toggles: {
       tgShockwave: false, tgParticles: false,
-      tgSpecTop: false, tgSpecBot: false,
+      tgSpectrum: false,
       tgGrain: false, tgAmbient: false,
       tgGlowBg: false, tgLogoGlow: false,
       tgFlare1: false, tgFlare2: false,
@@ -7832,6 +7886,8 @@ function getDefaultPreset() {
     colors2: { fadeColor: '#000000', textColor: '#ffffff' },
     mediaPos: { x: 0.5, y: 0.5 },
     textPos: { x: 0.5, y: 0.88 },
+    specStart: { x: 0.08, y: 0.82 },
+    specEnd: { x: 0.92, y: 0.82 },
     automations: {},
     bypass: {},
   };

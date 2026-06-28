@@ -7655,6 +7655,7 @@ async function openSavePreset() {
   let info;
   try { info = await apiPresetList(); } catch (e) { toast('Could not reach the server', 'error'); return; }
   if (info.signedIn === false) { toast('Sign in to save presets to your account', 'error'); return; }
+  if (info.setup) { toast(info.setup, 'error'); return; }
   const existing = info.presets || [];
   const listHtml = existing.length
     ? '<div class="preset-list">' + existing.map(p => '<button type="button" class="preset-item" data-name="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</button>').join('') + '</div>'
@@ -7695,6 +7696,7 @@ async function openLoadPreset() {
   let info;
   try { info = await apiPresetList(); } catch (e) { toast('Could not reach the server', 'error'); return; }
   if (info.signedIn === false) { toast('Sign in to load your presets', 'error'); return; }
+  if (info.setup) { toast(info.setup, 'error'); return; }
   const existing = info.presets || [];
   const listHtml = existing.length
     ? '<div class="preset-list">' + existing.map(p =>

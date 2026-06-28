@@ -1,13 +1,17 @@
 import { auth } from '@clerk/nextjs/server';
-import { put, list, del } from '@vercel/blob';
+import { put, list, del, get } from '@vercel/blob';
 
 export const runtime = 'nodejs';
 
-// Named presets (settings + logo image) are stored per-user in Vercel Blob.
-// Each preset is one JSON blob at presets/<userId>/<name>.json containing
-// { preset, logo }. Requires the BLOB_READ_WRITE_TOKEN env var (added
-// automatically when you enable Blob storage on the Vercel project).
+// Named presets (settings + logo image) are stored per-user in PRIVATE Vercel
+// Blob storage: files are only reachable through this authenticated API, never
+// via a public URL. Each preset is one JSON blob at presets/<userId>/<name>.json
+// holding { preset, logo }. Requires BLOB_READ_WRITE_TOKEN (added automatically
+// when you connect a Blob store to the Vercel project).
+const ACCESS = 'private';
 const MAX_NAME = 60;
+const SETUP_MSG = 'Preset storage is not set up yet. Connect a (Private) Vercel Blob store to this project and redeploy.';
+const blobReady = () => !!process.env.BLOB_READ_WRITE_TOKEN;
 const PREFIX = (userId) => `presets/${userId}/`;
 const pathFor = (userId, name) => `${PREFIX(userId)}${encodeURIComponent(name)}.json`;
 const nameFromPath = (pathname) => {
@@ -15,26 +19,22 @@ const nameFromPath = (pathname) => {
   catch { return pathname.split('/').pop().replace(/\.json$/, ''); }
 };
 
-async function listUser(userId) {
-  const { blobs } = await list({ prefix: PREFIX(userId) });
-  return blobs;
-}
-
 // GET            → list of the user's presets (names only, no payload)
 // GET ?name=X    → the full { preset, logo } payload for one preset
 export async function GET(req) {
   const { userId } = auth();
   if (!userId) return Response.json({ presets: [], signedIn: false });
+  if (!blobReady()) return Response.json({ presets: [], signedIn: true, setup: SETUP_MSG });
 
   const name = new URL(req.url).searchParams.get('name');
   try {
-    const blobs = await listUser(userId);
     if (name) {
-      const match = blobs.find((b) => nameFromPath(b.pathname) === name);
-      if (!match) return Response.json({ error: 'Preset not found.' }, { status: 404 });
-      const data = await fetch(match.url).then((r) => r.text());
-      return new Response(data, { headers: { 'content-type': 'application/json' } });
+      const res = await get(pathFor(userId, name), { access: ACCESS });
+      if (!res || !res.stream) return Response.json({ error: 'Preset not found.' }, { status: 404 });
+      const text = await new Response(res.stream).text();
+      return new Response(text, { headers: { 'content-type': 'application/json' } });
     }
+    const { blobs } = await list({ prefix: PREFIX(userId) });
     const presets = blobs
       .map((b) => ({ name: nameFromPath(b.pathname), size: b.size, uploadedAt: b.uploadedAt }))
       .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
@@ -48,6 +48,7 @@ export async function GET(req) {
 export async function POST(req) {
   const { userId } = auth();
   if (!userId) return Response.json({ error: 'Sign in to save presets.' }, { status: 401 });
+  if (!blobReady()) return Response.json({ error: SETUP_MSG }, { status: 503 });
 
   const { name, data } = await req.json().catch(() => ({}));
   const cleanName = String(name || '').trim().slice(0, MAX_NAME);
@@ -56,14 +57,13 @@ export async function POST(req) {
 
   try {
     await put(pathFor(userId, cleanName), data, {
-      access: 'public',
+      access: ACCESS,
       contentType: 'application/json',
       addRandomSuffix: false,
       allowOverwrite: true,
     });
-    const blobs = await listUser(userId);
-    const names = blobs.map((b) => nameFromPath(b.pathname));
-    return Response.json({ ok: true, names });
+    const { blobs } = await list({ prefix: PREFIX(userId) });
+    return Response.json({ ok: true, names: blobs.map((b) => nameFromPath(b.pathname)) });
   } catch (err) {
     return Response.json({ error: err?.message || 'Could not save preset.' }, { status: 500 });
   }
@@ -76,11 +76,9 @@ export async function DELETE(req) {
   const name = new URL(req.url).searchParams.get('name');
   if (!name) return Response.json({ error: 'Missing preset name.' }, { status: 400 });
   try {
-    const blobs = await listUser(userId);
-    const match = blobs.find((b) => nameFromPath(b.pathname) === name);
-    if (match) await del(match.url);
-    const remaining = (await listUser(userId)).map((b) => nameFromPath(b.pathname));
-    return Response.json({ ok: true, names: remaining });
+    await del(pathFor(userId, name));
+    const { blobs } = await list({ prefix: PREFIX(userId) });
+    return Response.json({ ok: true, names: blobs.map((b) => nameFromPath(b.pathname)) });
   } catch (err) {
     return Response.json({ error: err?.message || 'Could not delete preset.' }, { status: 500 });
   }

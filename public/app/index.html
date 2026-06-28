@@ -768,6 +768,16 @@
   .export-card .loc-note { font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; line-height: 1.5; }
   .export-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
+  /* Account preset lists */
+  .preset-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; max-height: 260px; overflow-y: auto; }
+  .preset-item { width: 100%; text-align: left; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel-2); color: var(--ink); cursor: pointer; font-family: inherit; font-size: 12px; }
+  .preset-item:hover { border-color: var(--accent-2); }
+  .preset-row-item { display: flex; gap: 6px; align-items: stretch; }
+  .preset-item.grow { flex: 1; }
+  .preset-del { flex: 0 0 auto; width: 34px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 15px; line-height: 1; }
+  .preset-del:hover { color: var(--red, #ff5d6c); border-color: var(--red, #ff5d6c); }
+  .preset-empty { font-size: 12px; color: var(--ink-faint); padding: 14px 0; }
+
   /* Per-slider automation button */
   .field label .v { margin-left: auto; }
   .auto-btn {
@@ -1678,11 +1688,11 @@
       <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
         <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px;">Presets</div>
         <div class="preset-row">
-          <button id="saveBtn" title="Save current settings to a JSON file">Save</button>
-          <button id="loadBtn" title="Load settings from a JSON file">Load</button>
+          <button id="saveBtn" title="Save the current look (incl. logo) to your account">Save</button>
+          <button id="loadBtn" title="Load a saved preset from your account">Load</button>
           <button id="resetBtn" title="Reset all settings to defaults">Reset</button>
         </div>
-        <input type="file" id="loadInput" accept=".json,application/json" style="display:none" />
+        <div style="font-size: 9px; color: var(--ink-faint); margin-top: 8px; line-height: 1.5;">Saved to your account (settings + logo). Sign in to use presets.</div>
       </div>
     </div>
 
@@ -2008,12 +2018,45 @@ function imgH(img) { return img.naturalHeight || img.height; }
 setupFileInput('audioInput', 'dropAudio', 'audioPlaceholder', 'audioName', loadAudio, 'audioInfo');
 setupFileInput('logoInput', 'dropLogo', 'logoPlaceholder', 'logoName', async (file) => {
   state.logoImg = await loadImage(file);
+  // Keep the original bytes as a data URL so the logo can be saved with presets.
+  try { state.logoDataUrl = await fileToDataURL(file); } catch (e) { state.logoDataUrl = null; }
+  state.logoName = file.name;
   $('emptyState').style.display = 'none';
   // If no bg yet, use logo for palette
   if (!state.bgImg) await analyzeBgPalette(state.logoImg);
   await analyzeLogoPalette(state.logoImg);
   drawPreviewFrame(getCurrentTime(), 0);
 });
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error || new Error('read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+// Apply a logo from a data URL (used when loading an account preset).
+async function applyLogoDataUrl(dataUrl) {
+  if (!dataUrl) return;
+  const img = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error('logo decode failed'));
+    im.src = dataUrl;
+  });
+  state.logoImg = img;
+  state.logoDataUrl = dataUrl;
+  $('emptyState').style.display = 'none';
+  const drop = $('dropLogo');
+  if (drop) drop.classList.add('has-file');
+  const nameEl = $('logoName');
+  if (nameEl) { nameEl.style.display = 'block'; nameEl.textContent = 'Logo (from preset)'; }
+  const ph = $('logoPlaceholder');
+  if (ph) ph.style.display = 'none';
+  try { if (!state.bgImg) await analyzeBgPalette(state.logoImg); await analyzeLogoPalette(state.logoImg); } catch (e) {}
+}
 setupFileInput('bgInput', 'dropBg', 'bgPlaceholder', 'bgName', async (file) => {
   state.bgImg = await loadImage(file);
   $('emptyState').style.display = 'none';
@@ -7552,39 +7595,142 @@ function applyPreset(preset, silent) {
   if (!silent) toast('Preset loaded', 'success');
 }
 
-$('saveBtn').addEventListener('click', () => {
-  const preset = gatherPreset();
-  const json = JSON.stringify(preset, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  a.download = `pulse-preset-${ts}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  toast('Preset saved', 'success');
-});
+// ============================================================
+// ACCOUNT PRESETS — named presets (settings + logo) saved to the user's
+// account via /api/presets (Vercel Blob). Same-origin fetch carries the Clerk
+// session cookie, so the API knows who is signed in.
+// ============================================================
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
-$('loadBtn').addEventListener('click', () => { $('loadInput').click(); });
+let _presetModal = null;
+function presetModal() {
+  if (_presetModal) return _presetModal;
+  const m = document.createElement('div');
+  m.className = 'export-modal';
+  m.innerHTML = '<div class="export-card"></div>';
+  m.addEventListener('click', (e) => { if (e.target === m) closePresetModal(); });
+  document.body.appendChild(m);
+  _presetModal = m;
+  return m;
+}
+function openPresetCard(html) {
+  const m = presetModal();
+  m.querySelector('.export-card').innerHTML = html;
+  m.classList.add('show');
+  return m.querySelector('.export-card');
+}
+function closePresetModal() { if (_presetModal) _presetModal.classList.remove('show'); }
 
-$('loadInput').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    const preset = JSON.parse(text);
-    applyPreset(preset);
-  } catch (err) {
-    console.error(err);
-    toast('Could not read preset file: ' + err.message, 'error');
-  } finally {
-    // Allow re-selecting the same file again later
-    e.target.value = '';
+async function apiPresetList() {
+  const r = await fetch('/api/presets', { headers: { accept: 'application/json' } });
+  return r.json();
+}
+async function apiPresetGet(name) {
+  const r = await fetch('/api/presets?name=' + encodeURIComponent(name));
+  if (!r.ok) throw new Error('Preset not found');
+  return r.json();
+}
+async function apiPresetSave(name, dataStr) {
+  const r = await fetch('/api/presets', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, data: dataStr }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+async function apiPresetDelete(name) {
+  const r = await fetch('/api/presets?name=' + encodeURIComponent(name), { method: 'DELETE' });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+function buildPresetPayload() {
+  return JSON.stringify({ preset: gatherPreset(), logo: state.logoDataUrl || null });
+}
+
+async function openSavePreset() {
+  let info;
+  try { info = await apiPresetList(); } catch (e) { toast('Could not reach the server', 'error'); return; }
+  if (info.signedIn === false) { toast('Sign in to save presets to your account', 'error'); return; }
+  const existing = info.presets || [];
+  const listHtml = existing.length
+    ? '<div class="preset-list">' + existing.map(p => '<button type="button" class="preset-item" data-name="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</button>').join('') + '</div>'
+    : '<div class="preset-empty">No saved presets yet.</div>';
+  const card = openPresetCard(
+    '<h3>Save preset</h3>' +
+    '<p class="sub">Saves the current look and your logo to your account.</p>' +
+    '<label class="fld" for="presetSaveName">Name</label>' +
+    '<input type="text" id="presetSaveName" maxlength="60" autocomplete="off" placeholder="My preset" />' +
+    '<p class="loc-note">Click an existing preset to overwrite it.</p>' +
+    listHtml +
+    '<div class="export-actions"><button class="btn" id="presetSaveCancel">Cancel</button><div class="right"><button class="btn primary" id="presetSaveGo">Save</button></div></div>'
+  );
+  const nameInput = card.querySelector('#presetSaveName');
+  card.querySelectorAll('.preset-item').forEach(b => b.addEventListener('click', () => { nameInput.value = b.dataset.name; nameInput.focus(); }));
+  card.querySelector('#presetSaveCancel').addEventListener('click', closePresetModal);
+  const go = card.querySelector('#presetSaveGo');
+  async function doSave() {
+    const name = (nameInput.value || '').trim();
+    if (!name) { toast('Enter a name', 'error'); return; }
+    if (existing.some(p => p.name === name) && !confirm('Overwrite "' + name + '"?')) return;
+    go.disabled = true; go.textContent = 'Saving…';
+    try {
+      await apiPresetSave(name, buildPresetPayload());
+      toast('Saved "' + name + '"', 'success');
+      closePresetModal();
+    } catch (e) {
+      toast('Save failed: ' + e.message, 'error');
+      go.disabled = false; go.textContent = 'Save';
+    }
   }
-});
+  go.addEventListener('click', doSave);
+  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSave(); } });
+  setTimeout(() => { try { nameInput.focus(); } catch (e) {} }, 30);
+}
+
+async function openLoadPreset() {
+  let info;
+  try { info = await apiPresetList(); } catch (e) { toast('Could not reach the server', 'error'); return; }
+  if (info.signedIn === false) { toast('Sign in to load your presets', 'error'); return; }
+  const existing = info.presets || [];
+  const listHtml = existing.length
+    ? '<div class="preset-list">' + existing.map(p =>
+        '<div class="preset-row-item"><button type="button" class="preset-item grow" data-name="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</button>' +
+        '<button type="button" class="preset-del" data-name="' + escapeHtml(p.name) + '" title="Delete">×</button></div>'
+      ).join('') + '</div>'
+    : '<div class="preset-empty">You have no saved presets yet. Use Save to create one.</div>';
+  const card = openPresetCard(
+    '<h3>Load preset</h3>' +
+    '<p class="sub">Loads the settings and the saved logo.</p>' +
+    listHtml +
+    '<div class="export-actions"><div class="right"><button class="btn" id="presetLoadClose">Close</button></div></div>'
+  );
+  card.querySelector('#presetLoadClose').addEventListener('click', closePresetModal);
+  card.querySelectorAll('.preset-item').forEach(b => b.addEventListener('click', async () => {
+    const name = b.dataset.name;
+    b.textContent = 'Loading…';
+    try {
+      const payload = await apiPresetGet(name);
+      if (payload && payload.preset) applyPreset(payload.preset);
+      if (payload && payload.logo) await applyLogoDataUrl(payload.logo);
+      redrawPreviewSafe();
+      toast('Loaded "' + name + '"', 'success');
+      closePresetModal();
+    } catch (e) { toast('Load failed: ' + e.message, 'error'); b.textContent = name; }
+  }));
+  card.querySelectorAll('.preset-del').forEach(b => b.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const name = b.dataset.name;
+    if (!confirm('Delete "' + name + '"?')) return;
+    try { await apiPresetDelete(name); openLoadPreset(); } catch (err) { toast('Delete failed: ' + err.message, 'error'); }
+  }));
+}
+
+$('saveBtn').addEventListener('click', openSavePreset);
+$('loadBtn').addEventListener('click', openLoadPreset);
 
 function getDefaultPreset() {
   return {

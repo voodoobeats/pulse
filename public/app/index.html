@@ -91,6 +91,8 @@
     font-size: 22px;
     font-weight: 800;
     letter-spacing: 0.02em;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .brand .dot {
     width: 10px; height: 10px;
@@ -112,6 +114,15 @@
     text-transform: uppercase;
     margin-left: 4px;
     align-self: center;
+    white-space: nowrap;
+  }
+  /* Free up the topbar on narrow (but non-mobile) widths so the brand + subtitle
+     never get crowded into each other. */
+  @media (max-width: 1180px) {
+    .topbar .meta, .topbar .sep { display: none; }
+  }
+  @media (max-width: 1000px) {
+    .brand .sub { display: none; }
   }
   .topbar .sep {
     width: 1px; height: 24px; background: var(--line);
@@ -502,7 +513,7 @@
     box-shadow: 0 0 16px rgba(95, 110, 231, 0.35);
   }
   .btn.primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #6f7dff, #7ad8f5);
+    background: linear-gradient(135deg, #5f6ee7, #5fc9e7);
     border-color: transparent;
     box-shadow: 0 0 22px rgba(94, 253, 247, 0.45);
   }
@@ -719,7 +730,7 @@
   .short-range .short-lbl {
     position: absolute; top: -15px; left: 3px;
     font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
-    color: #7ad3f0; white-space: nowrap;
+    color: #5fc9e7; white-space: nowrap;
   }
   .short-handle {
     position: absolute; top: -6px; bottom: -6px; width: 14px;
@@ -775,8 +786,27 @@
   .preset-row-item { display: flex; gap: 6px; align-items: stretch; }
   .preset-item.grow { flex: 1; }
   .preset-del { flex: 0 0 auto; width: 34px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 15px; line-height: 1; }
-  .preset-del:hover { color: var(--red, #ff5d6c); border-color: var(--red, #ff5d6c); }
+  .preset-del:hover { color: var(--red, #ff5dcc); border-color: var(--red, #ff5dcc); }
   .preset-empty { font-size: 12px; color: var(--ink-faint); padding: 14px 0; }
+
+  /* Shorts / Reels — a distinct feature card */
+  .shorts-card {
+    margin-top: 18px; border-radius: 12px; padding: 15px 14px;
+    border: 1px solid var(--accent);
+    background: linear-gradient(160deg, rgba(95,110,231,0.12), rgba(94,253,247,0.04));
+  }
+  .shorts-card .sc-head { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+  .shorts-card .sc-head svg { flex: 0 0 auto; color: var(--accent-2); }
+  .shorts-card .sc-title { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: 0.02em; }
+  .shorts-card .sc-chip { margin-left: auto; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 3px 9px; }
+  .shorts-card .sc-sub { font-size: 10.5px; color: var(--ink-dim); margin-bottom: 12px; line-height: 1.55; }
+  .shorts-card .sc-auto { border-color: var(--accent); color: var(--accent-2); }
+  .shorts-card .sc-auto:hover { background: rgba(94,253,247,0.10); }
+  .shorts-card .sc-fades { margin-top: 8px; border-top: 1px dashed var(--line-2); }
+  .shorts-card .sc-fades > summary { cursor: pointer; list-style: none; padding: 8px 0 2px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+  .shorts-card .sc-fades > summary::-webkit-details-marker { display: none; }
+  .shorts-card .sc-fades > summary::before { content: '▸ '; }
+  .shorts-card .sc-fades[open] > summary::before { content: '▾ '; }
 
   /* Per-slider automation button */
   .field label .v { margin-left: auto; }
@@ -1139,7 +1169,7 @@
     background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 15px; line-height: 1;
     display: flex; align-items: center; justify-content: center; transition: all 0.12s ease;
   }
-  .effect-card .fx-remove:hover { color: var(--red, #ff5d6c); border-color: var(--red, #ff5d6c); }
+  .effect-card .fx-remove:hover { color: var(--red, #ff5dcc); border-color: var(--red, #ff5dcc); }
   .effect-card .fx-body { padding: 12px 12px 14px; }
   .effect-card.fx-off { opacity: 0.55; }
   .effect-card.fx-off .fx-dot { background: var(--ink-faint); box-shadow: none; }
@@ -1726,27 +1756,27 @@
         <div style="font-size: 9px; color: var(--ink-faint); margin-top: 4px; line-height: 1.5;">Only relevant on browsers that export WebM (e.g. Firefox). Re-encodes to MP4 in your browser — accurate but <strong>slow</strong>. Leave off for the fastest export; WebM plays everywhere and imports into editors &amp; social uploads.</div>
       </div>
 
-      <div style="border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px;">
-        <div style="font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px;">
-          Shorts · vertical 9:16
+      <div class="shorts-card">
+        <div class="sc-head">
+          <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="14" height="18" rx="2.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6.5 6.5L10.5 10L6.5 13.5V6.5Z" fill="currentColor"/>
+          </svg>
+          <span class="sc-title">Shorts &amp; Reels</span>
+          <span class="sc-chip">9:16</span>
         </div>
-        <div style="font-size: 9px; color: var(--ink-faint); margin-bottom: 10px; line-height: 1.5;">
-          Up to 3 portrait clips. <strong style="color:var(--accent-2)">Auto-pick</strong> finds clean 16-bar phrases by BPM and snaps cuts to downbeats. Audio fades in/out; the video darkens on the fade-out. Doesn't affect the main render.
-        </div>
-        <div class="field">
-          <label>Short Fade In <span class="v" id="shortFadeInV">1.0 s</span></label>
-          <input type="range" id="shortFadeIn" min="0" max="5" step="0.1" value="1" />
-        </div>
-        <div class="field">
-          <label>Short Fade Out <span class="v" id="shortFadeOutV">3.0 s</span></label>
-          <input type="range" id="shortFadeOut" min="0" max="5" step="0.1" value="3" />
-        </div>
+        <div class="sc-sub"><strong style="color:var(--accent-2)">Auto</strong> finds clean phrases and snaps cuts to the beat. Up to 3 clips — separate from your main render.</div>
         <div id="shortsList"></div>
-        <div class="preset-row" style="margin-top: 8px;">
-          <button id="addShortBtn" title="Add a short range at the playhead">+ Add</button>
-          <button id="autoShortBtn" title="Auto-pick 3 clean 16-bar phrases by BPM">✨ Auto</button>
-          <button id="renderShortsBtn" title="Render all short ranges as vertical clips">Render</button>
+        <div class="preset-row" style="margin-top: 10px;">
+          <button id="addShortBtn" title="Add a clip at the playhead">+ Add</button>
+          <button id="autoShortBtn" class="sc-auto" title="Auto-pick clean phrases by BPM">✨ Auto</button>
+          <button id="renderShortsBtn" title="Render the vertical clips">Render</button>
         </div>
+        <details class="sc-fades">
+          <summary>Fade settings</summary>
+          <div class="field" style="margin-top:8px"><label>Fade In <span class="v" id="shortFadeInV">1.0 s</span></label><input type="range" id="shortFadeIn" min="0" max="5" step="0.1" value="1" /></div>
+          <div class="field"><label>Fade Out <span class="v" id="shortFadeOutV">3.0 s</span></label><input type="range" id="shortFadeOut" min="0" max="5" step="0.1" value="3" /></div>
+        </details>
       </div>
     </div>
   </div>
@@ -5615,7 +5645,7 @@ function renderShortsUI() {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line);';
     row.innerHTML =
-      '<span style="color:#7ad3f0;font-weight:700;font-size:11px;">S' + (i + 1) + '</span>' +
+      '<span style="color:#5fc9e7;font-weight:700;font-size:11px;">S' + (i + 1) + '</span>' +
       '<span style="font-size:10px;color:var(--ink-dim);flex:1;min-width:90px;">' + fmtRange(s) + '</span>';
     const bStart = document.createElement('button');
     bStart.textContent = '⇤ start'; bStart.title = 'Set start to playhead';
@@ -5732,7 +5762,7 @@ function detectTempoAndBeats() {
   const minBpm = 70, maxBpm = 180;
   const minLag = Math.max(2, Math.round(fps * 60 / maxBpm));
   const maxLag = Math.min(frames - 2, Math.round(fps * 60 / minBpm));
-  const acfMax = Math.min(frames - 2, maxLag * 3 + 2);
+  const acfMax = Math.min(frames - 2, maxLag * 4 + 2);
   const acf = new Float32Array(acfMax + 2);
   for (let lag = minLag; lag <= acfMax; lag++) {
     let s = 0;
@@ -5740,16 +5770,22 @@ function detectTempoAndBeats() {
     for (let i = 0; i < lim; i++) s += oss[i] * oss[i + lag];
     acf[lag] = s / lim;
   }
-  const hw = [0, 1, 0.6];
+  // Harmonic summation: the real beat period shows autocorrelation peaks at ALL
+  // of its integer multiples, so summing acf over multiples reinforces the true
+  // fundamental and suppresses spurious sub-beats / wrong metrical levels.
+  const hw = [0, 1.0, 0.5, 0.34, 0.25];
   let bestLag = minLag, bestScore = -Infinity;
   for (let lag = minLag; lag <= maxLag; lag++) {
     let comb = 0;
-    for (let h = 1; h <= 2; h++) {
+    for (let h = 1; h < hw.length; h++) {
       const L = Math.round(h * lag);
       if (L <= acfMax) comb += hw[h] * acf[L];
     }
     const bpm = fps * 60 / lag;
-    const w = Math.exp(-0.5 * Math.pow(Math.log(bpm / 130) / 0.5, 2));
+    // Very gentle, wide preference toward a comfortable tapping tempo. Flat
+    // enough that the autocorrelation — not the prior — decides the tempo,
+    // which fixes the old bias that pulled everything toward ~130 BPM.
+    const w = Math.exp(-0.5 * Math.pow(Math.log(bpm / 112) / 1.0, 2));
     const ws = comb * w;
     if (ws > bestScore) { bestScore = ws; bestLag = lag; }
   }

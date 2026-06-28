@@ -102,6 +102,23 @@ export default function PricingPage() {
   const yearly = interval === 'yearly';
 
   return (
+    <>
+      <div className="pricing-bg" aria-hidden="true">
+        <svg className="pb-svg" viewBox="0 0 800 800" focusable="false">
+          <g className="pb-a pb-rot-slow">
+            <circle cx="400" cy="400" r="360" />
+            <circle cx="400" cy="400" r="250" />
+            <circle cx="400" cy="400" r="140" />
+            <polygon points="700,400 550,660 250,660 100,400 250,140 550,140" />
+          </g>
+          <g className="pb-b pb-rot-rev">
+            <polygon points="400,90 640,540 160,540" />
+            <rect x="220" y="220" width="360" height="360" />
+            <line x1="400" y1="40" x2="400" y2="760" />
+            <line x1="40" y1="400" x2="760" y2="400" />
+          </g>
+        </svg>
+      </div>
     <div className="page">
       <h1>Premium</h1>
       <p className="sub">Rendering, 4K export and Shorts — no limits.</p>
@@ -171,5 +188,6 @@ export default function PricingPage() {
 
       <p className="pay-note">Secure payment via Stripe &middot; cancel anytime</p>
     </div>
+    </>
   );
 }

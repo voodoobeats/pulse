@@ -1273,8 +1273,6 @@
   .flare-inst .fi-adv > summary::-webkit-details-marker { display: none; }
   .flare-inst .fi-adv > summary::before { content: '▸ '; }
   .flare-inst .fi-adv[open] > summary::before { content: '▾ '; }
-  .glow-row { border: 1px solid var(--line-2); border-radius: 9px; padding: 9px 11px; margin-bottom: 8px; background: var(--panel-2); }
-  .glow-row .glow-strength { margin-top: 8px; margin-bottom: 0; }
 
   /* Per-effect header buttons: collapse + gear */
   .effect-card .fx-drag {
@@ -1494,16 +1492,6 @@
               <label class="cb"><input type="checkbox" id="cbBg_glowbg" checked> Use Background Color</label>
               <input type="color" id="col_glowbg" value="#ff8c3c" disabled>
             </div>
-          </div>
-        </div>
-
-        <div class="effect-card" data-effect="glow" style="display:none">
-          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Glow</span><button class="fx-remove" title="Remove">×</button></div>
-          <div class="fx-body">
-            <input type="checkbox" id="tgGlow" hidden>
-            <div style="font-size:10px;color:var(--ink-faint);line-height:1.5;margin-bottom:8px">Tick the layers you want to glow. Each gets its own strength — and you can automate it.</div>
-            <div id="glowLayerList"></div>
-            <div id="glowEmptyHint" style="font-size:9px;color:var(--ink-faint);line-height:1.5">Add some effects (logo, spectrum, …) — they'll appear here to glow.</div>
           </div>
         </div>
 
@@ -2562,58 +2550,6 @@ function addTextInstance() {
 }
 if ($('addTextBtn')) $('addTextBtn').addEventListener('click', addTextInstance);
 
-// ============================================================
-// GLOW — pick layers; each selected layer gets its own internal glow
-// (a strength slider that is automatable). Rendered by applying a shadow
-// bloom around that layer's own drawing.
-// ============================================================
-const GLOWABLE = ['logo', 'background', 'spectrum', 'particles', 'image', 'text', 'flares', 'ambient'];
-const GLOW_LABELS = { logo: 'Logo', background: 'Background', spectrum: 'Audio Spectrum', particles: 'Particles', image: 'Image / Video', text: 'Text', flares: 'Optical Flares', ambient: 'Ambient FX' };
-let glowState = {};   // layer -> { on: bool, strength: number(0..200) }
-function glowEntry(layer) { if (!glowState[layer]) glowState[layer] = { on: false, strength: 100 }; return glowState[layer]; }
-
-function buildGlowRow(layer) {
-  const e = glowEntry(layer);
-  const row = document.createElement('div');
-  row.className = 'glow-row';
-  row.innerHTML =
-    '<label class="cb"><input type="checkbox" class="glowOn" ' + (e.on ? 'checked' : '') + '> ' + (GLOW_LABELS[layer] || layer) + '</label>' +
-    '<div class="field glow-strength" style="' + (e.on ? '' : 'display:none') + '">' +
-      '<label>Strength <span class="v vS">' + Math.round(e.strength) + '%</span></label>' +
-      '<input type="range" id="glow_' + layer + '" min="0" max="200" value="' + Math.round(e.strength) + '"></div>';
-  const cb = row.querySelector('.glowOn');
-  const fieldEl = row.querySelector('.glow-strength');
-  const slider = row.querySelector('input[type="range"]');
-  const span = row.querySelector('.vS');
-  cb.addEventListener('change', () => { e.on = cb.checked; fieldEl.style.display = cb.checked ? '' : 'none'; redrawPreviewSafe(); autosaveDebounced(); });
-  slider.addEventListener('input', () => { e.strength = parseFloat(slider.value); if (span) span.textContent = slider.value + '%'; redrawPreviewSafe(); autosaveDebounced(); });
-  return row;
-}
-function rebuildGlowList() {
-  const list = $('glowLayerList');
-  if (!list) return;
-  const layers = GLOWABLE.filter(l => fxIsAdded(l));
-  list.innerHTML = '';
-  layers.forEach(l => list.appendChild(buildGlowRow(l)));
-  const hint = $('glowEmptyHint'); if (hint) hint.style.display = layers.length ? 'none' : '';
-  // Give each strength slider an automation button (same UX as built-in sliders).
-  layers.forEach(l => {
-    const sl = $('glow_' + l); if (!sl) return;
-    const field = sl.closest('.field'); if (!field) return;
-    const label = field.querySelector('label'); if (!label || label.querySelector('.auto-btn')) return;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'auto-btn'; b.dataset.param = 'glow_' + l; b.textContent = 'A';
-    const v = label.querySelector('.v'); if (v) label.insertBefore(b, v); else label.appendChild(b);
-    b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); openAutomation('glow_' + l); });
-  });
-  if (typeof refreshAutoButtons === 'function') refreshAutoButtons();
-}
-// Glow strength (0..n) for a layer, honouring automation. 0 = no glow.
-function layerGlow(name) {
-  const e = glowState[name];
-  if (!e || !e.on) return 0;
-  return $('glow_' + name) ? pval('glow_' + name) / 100 : e.strength / 100;
-}
-
 function fxColor(name) {
   const c = effectColors[name];
   if (!c) return bgPalette.accent;
@@ -2816,7 +2752,6 @@ const FX_TOGGLES = {
   grain:     ['tgGrain'],
   ambient:   ['tgAmbient'],
   flares:    ['tgFlares'],
-  glow:      ['tgGlow'],
   camerashake: ['tgCameraShake'],
   rgbsplit:  ['tgRgbSplit'],
   image:     ['tgImage'],
@@ -2830,16 +2765,16 @@ const FX_TOGGLES = {
 const FX_TITLES = {
   glowbg: 'Logo Light', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
-  flares: 'Optical Flares', glow: 'Glow',
+  flares: 'Optical Flares',
   camerashake: 'Camera Shake', rgbsplit: 'RGB Split', image: 'Image / Video', fade: 'Fade',
   background: 'Background Image', logo: 'Logo', vignette: 'Vignette', text: 'Text', blur: 'Blur',
 };
-const FX_ORDER = ['background', 'logo', 'glowbg', 'glow', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flares', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
+const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flares', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
 
 // LAYER ORDER — a single stack the user can reorder by drag & drop. Read top to
 // bottom = back to front (top card drawn first, bottom drawn last/on top). The
 // Background effect is always forced to the very back regardless of its slot.
-const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'glow', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flares', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
+const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flares', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
 let fxOrder = DEFAULT_FX_ORDER.slice();
 function rebuildFxOrder() {
   const stack = $('fxStack');
@@ -2943,7 +2878,6 @@ function addEffect(fx) {
     addTextInstance();
   }
   rebuildAddMenu();
-  if (typeof rebuildGlowList === 'function') rebuildGlowList();
   redrawPreviewSafe();
 }
 function removeEffect(fx) {
@@ -2954,7 +2888,6 @@ function removeEffect(fx) {
   // If this flare was being positioned, stop the picker.
   if (flarePlacing === fx && typeof setFlarePlacing === 'function') setFlarePlacing(fx);
   rebuildAddMenu();
-  if (typeof rebuildGlowList === 'function') rebuildGlowList();
   redrawPreviewSafe();
 }
 function rebuildAddMenu() {
@@ -2997,7 +2930,6 @@ $('fxAddBtn').addEventListener('click', () => {
 });
 
 rebuildAddMenu();
-if (typeof rebuildGlowList === 'function') rebuildGlowList();
 
 // ============================================================
 // EFFECT CARD CHROME — collapse toggle + gear settings (per card)
@@ -4410,24 +4342,9 @@ function drawFrame(ctx, w, h, time, bass) {
   }
 
   // ===== Compose the layer stack =====
-  // The Glow effect wraps a layer's own drawing in a shadow bloom, so selected
-  // layers glow individually (their internal glow) rather than a flat screen glow.
-  const tgGlow = $('tgGlow') ? $('tgGlow').checked : false;
-  function renderFxGlow(name) {
-    const gs = tgGlow ? layerGlow(name) : 0;
-    if (gs > 0.01) {
-      ctx.save();
-      ctx.shadowColor = 'rgba(255,255,255,0.92)';
-      ctx.shadowBlur = gs * Math.max(w, h) * 0.03;
-      renderFx(name);
-      ctx.restore();
-    } else {
-      renderFx(name);
-    }
-  }
   // Background is forced to the very back regardless of where its card sits.
-  renderFxGlow('background');
-  for (const _fx of fxOrder) { if (_fx !== 'background') renderFxGlow(_fx); }
+  renderFx('background');
+  for (const _fx of fxOrder) { if (_fx !== 'background') renderFx(_fx); }
 
   // ========== Outro fade-to-black (shorts only) ==========
   // Same smoothstep as the intro, but ramping UP to full black over the clip's
@@ -8183,7 +8100,7 @@ const PRESET_SLIDER_IDS = [
 ];
 const PRESET_TEXT_IDS = ['textContent'];
 const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape', 'specColorMode', 'shockType'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlares', 'tgGlow', 'partMirror',
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlares', 'partMirror',
   'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame', 'convertMp4',
   'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'];
 const PRESET_COLOR_IDS = ['fadeColor', 'textColor', 'specGradA', 'specGradB'];
@@ -8216,7 +8133,6 @@ function gatherPreset() {
       content: t.content, font: t.font, align: t.align, size: t.size,
       rot: t.rot, opacity: t.opacity, color: t.color, x: t.x, y: t.y,
     })),
-    glow: JSON.parse(JSON.stringify(glowState)),
     order: fxOrder.slice(),
     bypass: { ...fxBypassed },
     colors2: {},
@@ -8411,18 +8327,6 @@ function applyPreset(preset, silent) {
     flarePos[textKey(inst)] = inst;
   }
   renderTextList();
-
-  // Glow per-layer selection + strength.
-  glowState = {};
-  if (preset.glow && typeof preset.glow === 'object') {
-    Object.keys(preset.glow).forEach(layer => {
-      const g = preset.glow[layer];
-      if (g && typeof g === 'object') {
-        glowState[layer] = { on: !!g.on, strength: typeof g.strength === 'number' ? g.strength : 100 };
-      }
-    });
-  }
-  if (typeof rebuildGlowList === 'function') rebuildGlowList();
 
   // Layer order (drag & drop). Reorder the DOM cards to match, then refresh.
   if (Array.isArray(preset.order) && preset.order.length) {
@@ -8683,7 +8587,7 @@ function getDefaultPreset() {
       tgSpectrum: false, specFlipH: false, specFlipV: false,
       tgGrain: false, tgAmbient: false,
       tgGlowBg: false, tgLogoGlow: false,
-      tgFlares: false, tgGlow: false,
+      tgFlares: false,
       partMirror: false,
       tgCameraShake: false, tgRgbSplit: false, tgImage: false, tgFade: false,
       fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
@@ -8705,7 +8609,6 @@ function getDefaultPreset() {
     },
     flareInstances: [],
     textInstances: [],
-    glow: {},
     order: DEFAULT_FX_ORDER.slice(),
     colors2: { fadeColor: '#000000', textColor: '#ffffff', specGradA: '#5f6ee7', specGradB: '#5efdf7' },
     mediaPos: { x: 0.5, y: 0.5 },

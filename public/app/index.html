@@ -1238,6 +1238,15 @@
     box-shadow: 0 0 0 1px var(--accent-2) inset;
   }
   canvas#previewCanvas.flare-placing { cursor: crosshair; }
+  /* Inline editor shown when double-clicking a slider */
+  .range-edit {
+    position: fixed; z-index: 9999; height: 26px; padding: 2px 6px;
+    border: 1px solid var(--accent); border-radius: 6px;
+    background: var(--panel); color: var(--ink);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  }
+  .range-edit:focus { outline: none; border-color: var(--accent-2); }
   .numrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
   .numrow > span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); width: 38px; flex: 0 0 auto; }
   .numrow label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-dim); flex: 1; }
@@ -1264,6 +1273,8 @@
   .flare-inst .fi-adv > summary::-webkit-details-marker { display: none; }
   .flare-inst .fi-adv > summary::before { content: '▸ '; }
   .flare-inst .fi-adv[open] > summary::before { content: '▾ '; }
+  .glow-row { border: 1px solid var(--line-2); border-radius: 9px; padding: 9px 11px; margin-bottom: 8px; background: var(--panel-2); }
+  .glow-row .glow-strength { margin-top: 8px; margin-bottom: 0; }
 
   /* Per-effect header buttons: collapse + gear */
   .effect-card .fx-drag {
@@ -1462,42 +1473,23 @@
           <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Text</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
             <input type="checkbox" id="tgText" hidden>
-            <div class="field"><label>Text</label>
-              <textarea id="textContent" rows="2" placeholder="Your text…" style="width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);padding:9px 12px;font-family:inherit;font-size:12px;border-radius:8px;resize:vertical;"></textarea>
-            </div>
-            <div class="field"><label>Font</label>
-              <select id="fontStyle" class="fx-select">
-                <option value="cormorant">Cinematic Serif (Cormorant)</option>
-                <option value="cinzel">Film Title (Cinzel)</option>
-                <option value="tenor">Cinematic Sans (Tenor)</option>
-                <option value="custom">Custom Uploaded Font</option>
-              </select>
-            </div>
-            <div class="field"><label>Alignment</label>
-              <select id="textAlign" class="fx-select">
-                <option value="center" selected>Center</option>
-                <option value="left">Left</option>
-                <option value="right">Right</option>
-              </select>
-            </div>
-            <div class="field"><label>Size <span class="v" id="textSizeV">100%</span></label><input type="range" id="textSize" min="20" max="300" value="100" /></div>
-            <div class="field"><label>Rotation <span class="v" id="textRotV">0°</span></label><input type="range" id="textRot" min="-180" max="180" value="0" /></div>
-            <div class="field"><label>Opacity <span class="v" id="textOpacityV">100%</span></label><input type="range" id="textOpacity" min="0" max="100" value="100" /></div>
-            <button type="button" class="fx-posbtn" id="btnPos_text">⊕ Set position — drag on preview</button>
-            <button type="button" class="fx-posbtn" id="textCenter" style="margin-top:8px">⊕ Center horizontally</button>
-            <div class="color-row">
-              <label class="cb">Text Color</label>
-              <input type="color" id="textColor" value="#ffffff">
-            </div>
+            <div style="font-size:10px;color:var(--ink-faint);line-height:1.5;margin-bottom:8px">Add as many text blocks as you like — each with its own font, position and color.</div>
+            <div id="textList"></div>
+            <button type="button" class="fx-add-btn" id="addTextBtn" style="margin-top:4px">+ Add text</button>
           </div>
         </div>
 
         <div class="effect-card" data-effect="glowbg">
-          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Glow Background</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Logo Light</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
             <input type="checkbox" id="tgGlowBg" checked hidden>
             <div class="field"><label>Glow Intensity <span class="v" id="glowBgIntV">100%</span></label><input type="range" id="glowBgInt" min="0" max="200" value="100" /></div>
             <div class="field"><label>Glow Size <span class="v" id="glowBgSizeV">100%</span></label><input type="range" id="glowBgSize" min="20" max="200" value="100" /></div>
+            <button type="button" class="fx-posbtn" id="btnPos_glow">⊕ Set position — drag on preview</button>
+            <div class="numrow"><span>Pos</span>
+              <label>X<input type="number" id="glowPosX" step="1" /></label>
+              <label>Y<input type="number" id="glowPosY" step="1" /></label>
+            </div>
             <div class="color-row">
               <label class="cb"><input type="checkbox" id="cbBg_glowbg" checked> Use Background Color</label>
               <input type="color" id="col_glowbg" value="#ff8c3c" disabled>
@@ -1505,13 +1497,37 @@
           </div>
         </div>
 
+        <div class="effect-card" data-effect="glow" style="display:none">
+          <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Glow</span><button class="fx-remove" title="Remove">×</button></div>
+          <div class="fx-body">
+            <input type="checkbox" id="tgGlow" hidden>
+            <div style="font-size:10px;color:var(--ink-faint);line-height:1.5;margin-bottom:8px">Tick the layers you want to glow. Each gets its own strength — and you can automate it.</div>
+            <div id="glowLayerList"></div>
+            <div id="glowEmptyHint" style="font-size:9px;color:var(--ink-faint);line-height:1.5">Add some effects (logo, spectrum, …) — they'll appear here to glow.</div>
+          </div>
+        </div>
+
         <div class="effect-card" data-effect="shockwave">
           <div class="fx-head"><span class="fx-dot"></span><span class="fx-title">Shockwave</span><button class="fx-remove" title="Remove">×</button></div>
           <div class="fx-body">
             <input type="checkbox" id="tgShockwave" checked hidden>
+            <div class="field"><label>Type</label>
+              <select id="shockType" class="fx-select">
+                <option value="color" selected>Color (glowing rings)</option>
+                <option value="displacement">Displacement (refraction)</option>
+              </select>
+            </div>
             <div class="field"><label>Threshold <span class="v" id="shockThreshV">50%</span></label><input type="range" id="shockThresh" min="10" max="95" value="50" /></div>
             <div class="field"><label>Reset <span class="v" id="shockResetV">0.5s</span></label><input type="range" id="shockReset" min="0" max="40" value="5" /></div>
-            <div class="color-row">
+            <div class="field"><label>Size <span class="v" id="shockSizeV">100%</span></label><input type="range" id="shockSize" min="20" max="200" value="100" /></div>
+            <div class="field"><label>Speed <span class="v" id="shockSpeedV">100%</span></label><input type="range" id="shockSpeed" min="20" max="200" value="100" /></div>
+            <div class="field"><label>Range <span class="v" id="shockRangeV">100%</span></label><input type="range" id="shockRange" min="20" max="200" value="100" /></div>
+            <button type="button" class="fx-posbtn" id="btnPos_shock">⊕ Set origin — drag on preview</button>
+            <div class="numrow"><span>Origin</span>
+              <label>X<input type="number" id="shockOriginX" step="1" /></label>
+              <label>Y<input type="number" id="shockOriginY" step="1" /></label>
+            </div>
+            <div class="color-row" id="shockColorRow">
               <label class="cb"><input type="checkbox" id="cbBg_shockwave" checked> Use Background Color</label>
               <input type="color" id="col_shockwave" value="#ff8c3c" disabled>
             </div>
@@ -2185,9 +2201,9 @@ setupFileInput('fontInput', 'dropFont', 'fontPlaceholder', 'fontName', async (fi
     const fontFace = new FontFace('UserFont', arrayBuffer, { display: 'swap' });
     const loaded = await fontFace.load();
     document.fonts.add(loaded);
-    // Auto-switch the font dropdown to "custom" so the user sees the effect
-    $('fontStyle').value = 'custom';
-    $('fontStyle').dispatchEvent(new Event('change', { bubbles: true }));
+    // Switch every text block to the custom font so the upload takes effect.
+    textInstances.forEach(t => { t.font = 'custom'; });
+    if (typeof renderTextList === 'function') renderTextList();
     toast('Font loaded: ' + file.name, 'success');
     if (state.audioBuffer || state.logoImg || state.bgImg) {
       drawPreviewFrame(getCurrentTime(), 0);
@@ -2283,6 +2299,8 @@ const flarePos = {
   text:   { x: 0.5, y: 0.88 },
   specStart: { x: 0.08, y: 0.82 },
   specEnd:   { x: 0.92, y: 0.82 },
+  shock:     { x: 0.5, y: 0.5 },
+  glow:      { x: 0.5, y: 0.5 },
 };
 // Spectrum path mode — ordered list of normalized {x,y} points.
 let specPath = [];
@@ -2302,6 +2320,8 @@ function syncSpecNumInputs() {
   const set = (id, val) => { const e = $(id); if (e && document.activeElement !== e) e.value = Math.round(val); };
   set('specStartX', flarePos.specStart.x * d.w); set('specStartY', flarePos.specStart.y * d.h);
   set('specEndX',   flarePos.specEnd.x   * d.w); set('specEndY',   flarePos.specEnd.y   * d.h);
+  set('shockOriginX', flarePos.shock.x * d.w);   set('shockOriginY', flarePos.shock.y * d.h);
+  set('glowPosX', flarePos.glow.x * d.w);        set('glowPosY', flarePos.glow.y * d.h);
 }
 
 function hexToRgb(hex) {
@@ -2429,6 +2449,171 @@ function addFlareInstance() {
 }
 if ($('addFlareBtn')) $('addFlareBtn').addEventListener('click', addFlareInstance);
 
+// ============================================================
+// TEXT — unlimited instances managed inside one effect card.
+// ============================================================
+let textInstances = [];
+let textUid = 1;
+function defaultText() {
+  return {
+    id: textUid++, content: 'Your text', font: 'cormorant', align: 'center',
+    size: 1, rot: 0, opacity: 1, color: '#ffffff', x: 0.5, y: 0.88,
+  };
+}
+function textKey(inst) { return 'tx_' + inst.id; }
+function textPruneFlarePosKeys() {
+  Object.keys(flarePos).forEach(k => { if (k.indexOf('tx_') === 0) delete flarePos[k]; });
+}
+function syncTextNumInputs(key) {
+  const inst = textInstances.find(t => textKey(t) === key);
+  if (!inst) return;
+  const card = document.querySelector('#textList .text-inst[data-key="' + key + '"]');
+  if (!card) return;
+  const d = getOutputDims();
+  const xi = card.querySelector('[data-k="x"]'), yi = card.querySelector('[data-k="y"]');
+  if (xi && document.activeElement !== xi) xi.value = Math.round(inst.x * d.w);
+  if (yi && document.activeElement !== yi) yi.value = Math.round(inst.y * d.h);
+}
+
+function buildTextInstanceEl(inst) {
+  const key = textKey(inst);
+  const pct = (v) => Math.round(v * 100);
+  const d = getOutputDims();
+  const wrap = document.createElement('div');
+  wrap.className = 'flare-inst text-inst';
+  wrap.dataset.key = key;
+  wrap.innerHTML = `
+    <div class="fi-head"><span class="fx-dot"></span><span class="fi-title">Text</span>
+      <button type="button" class="fi-remove" title="Remove this text">×</button></div>
+    <div class="field"><textarea data-k="content" rows="2" placeholder="Your text…" style="width:100%;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink);padding:8px 10px;font-family:inherit;font-size:12px;border-radius:8px;resize:vertical;"></textarea></div>
+    <div class="field"><label>Font</label>
+      <select class="fx-select" data-k="font">
+        <option value="cormorant">Cinematic Serif (Cormorant)</option>
+        <option value="cinzel">Film Title (Cinzel)</option>
+        <option value="tenor">Cinematic Sans (Tenor)</option>
+        <option value="custom">Custom Uploaded Font</option>
+      </select>
+    </div>
+    <div class="field"><label>Alignment</label>
+      <select class="fx-select" data-k="align"><option value="center">Center</option><option value="left">Left</option><option value="right">Right</option></select>
+    </div>
+    <div class="field"><label>Size <span class="v vSize">${pct(inst.size)}%</span></label><input type="range" data-k="size" min="20" max="300" value="${pct(inst.size)}"></div>
+    <div class="field"><label>Rotation <span class="v vRot">${inst.rot}°</span></label><input type="range" data-k="rot" min="-180" max="180" value="${inst.rot}"></div>
+    <div class="field"><label>Opacity <span class="v vOpacity">${pct(inst.opacity)}%</span></label><input type="range" data-k="opacity" min="0" max="100" value="${pct(inst.opacity)}"></div>
+    <button type="button" class="fx-posbtn" data-place="${key}">⊕ Set position — drag on preview</button>
+    <div class="numrow"><span>Pos</span>
+      <label>X<input type="number" data-k="x" step="1" value="${Math.round(inst.x * d.w)}"></label>
+      <label>Y<input type="number" data-k="y" step="1" value="${Math.round(inst.y * d.h)}"></label>
+    </div>
+    <div class="color-row"><label class="cb" style="cursor:default">Text color</label><input type="color" data-k="color" value="${inst.color}"></div>`;
+
+  wrap.querySelector('[data-k="content"]').value = inst.content;
+  const fontSel = wrap.querySelector('[data-k="font"]'); fontSel.value = inst.font;
+  const alignSel = wrap.querySelector('[data-k="align"]'); alignSel.value = inst.align;
+
+  wrap.querySelector('[data-k="content"]').addEventListener('input', (e) => { inst.content = e.target.value; redrawPreviewSafe(); autosaveDebounced(); });
+  fontSel.addEventListener('change', () => { inst.font = fontSel.value; redrawPreviewSafe(); autosaveDebounced(); });
+  alignSel.addEventListener('change', () => { inst.align = alignSel.value; redrawPreviewSafe(); autosaveDebounced(); });
+
+  wrap.querySelectorAll('input[type="range"]').forEach(r => {
+    const k = r.dataset.k;
+    const span = wrap.querySelector('.v' + k.charAt(0).toUpperCase() + k.slice(1));
+    r.addEventListener('input', () => {
+      inst[k] = (k === 'rot') ? parseFloat(r.value) : parseFloat(r.value) / 100;
+      if (span) span.textContent = r.value + (k === 'rot' ? '°' : '%');
+      redrawPreviewSafe(); autosaveDebounced();
+    });
+  });
+
+  ['x', 'y'].forEach(axis => {
+    const ni = wrap.querySelector('input[type="number"][data-k="' + axis + '"]');
+    ni.addEventListener('input', () => {
+      const dd = getOutputDims();
+      const px = parseFloat(ni.value);
+      if (isNaN(px)) return;
+      inst[axis] = Math.max(0, Math.min(1, axis === 'x' ? px / dd.w : px / dd.h));
+      redrawPreviewSafe(); autosaveDebounced();
+    });
+  });
+
+  const colInp = wrap.querySelector('[data-k="color"]');
+  colInp.addEventListener('input', () => { inst.color = colInp.value; redrawPreviewSafe(); autosaveDebounced(); });
+  wrap.querySelector('[data-place]').addEventListener('click', () => setFlarePlacing(key));
+  wrap.querySelector('.fi-remove').addEventListener('click', () => {
+    const i = textInstances.indexOf(inst);
+    if (i >= 0) textInstances.splice(i, 1);
+    if (flarePlacing === key) setFlarePlacing(key);
+    delete flarePos[key];
+    renderTextList(); redrawPreviewSafe(); autosaveDebounced();
+  });
+  return wrap;
+}
+function renderTextList() {
+  const list = $('textList');
+  if (!list) return;
+  list.innerHTML = '';
+  textInstances.forEach(inst => { flarePos[textKey(inst)] = inst; list.appendChild(buildTextInstanceEl(inst)); });
+}
+function addTextInstance() {
+  const inst = defaultText();
+  textInstances.push(inst);
+  flarePos[textKey(inst)] = inst;
+  renderTextList(); redrawPreviewSafe(); autosaveDebounced();
+}
+if ($('addTextBtn')) $('addTextBtn').addEventListener('click', addTextInstance);
+
+// ============================================================
+// GLOW — pick layers; each selected layer gets its own internal glow
+// (a strength slider that is automatable). Rendered by applying a shadow
+// bloom around that layer's own drawing.
+// ============================================================
+const GLOWABLE = ['logo', 'background', 'spectrum', 'particles', 'image', 'text', 'flares', 'ambient'];
+const GLOW_LABELS = { logo: 'Logo', background: 'Background', spectrum: 'Audio Spectrum', particles: 'Particles', image: 'Image / Video', text: 'Text', flares: 'Optical Flares', ambient: 'Ambient FX' };
+let glowState = {};   // layer -> { on: bool, strength: number(0..200) }
+function glowEntry(layer) { if (!glowState[layer]) glowState[layer] = { on: false, strength: 100 }; return glowState[layer]; }
+
+function buildGlowRow(layer) {
+  const e = glowEntry(layer);
+  const row = document.createElement('div');
+  row.className = 'glow-row';
+  row.innerHTML =
+    '<label class="cb"><input type="checkbox" class="glowOn" ' + (e.on ? 'checked' : '') + '> ' + (GLOW_LABELS[layer] || layer) + '</label>' +
+    '<div class="field glow-strength" style="' + (e.on ? '' : 'display:none') + '">' +
+      '<label>Strength <span class="v vS">' + Math.round(e.strength) + '%</span></label>' +
+      '<input type="range" id="glow_' + layer + '" min="0" max="200" value="' + Math.round(e.strength) + '"></div>';
+  const cb = row.querySelector('.glowOn');
+  const fieldEl = row.querySelector('.glow-strength');
+  const slider = row.querySelector('input[type="range"]');
+  const span = row.querySelector('.vS');
+  cb.addEventListener('change', () => { e.on = cb.checked; fieldEl.style.display = cb.checked ? '' : 'none'; redrawPreviewSafe(); autosaveDebounced(); });
+  slider.addEventListener('input', () => { e.strength = parseFloat(slider.value); if (span) span.textContent = slider.value + '%'; redrawPreviewSafe(); autosaveDebounced(); });
+  return row;
+}
+function rebuildGlowList() {
+  const list = $('glowLayerList');
+  if (!list) return;
+  const layers = GLOWABLE.filter(l => fxIsAdded(l));
+  list.innerHTML = '';
+  layers.forEach(l => list.appendChild(buildGlowRow(l)));
+  const hint = $('glowEmptyHint'); if (hint) hint.style.display = layers.length ? 'none' : '';
+  // Give each strength slider an automation button (same UX as built-in sliders).
+  layers.forEach(l => {
+    const sl = $('glow_' + l); if (!sl) return;
+    const field = sl.closest('.field'); if (!field) return;
+    const label = field.querySelector('label'); if (!label || label.querySelector('.auto-btn')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'auto-btn'; b.dataset.param = 'glow_' + l; b.textContent = 'A';
+    const v = label.querySelector('.v'); if (v) label.insertBefore(b, v); else label.appendChild(b);
+    b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); openAutomation('glow_' + l); });
+  });
+  if (typeof refreshAutoButtons === 'function') refreshAutoButtons();
+}
+// Glow strength (0..n) for a layer, honouring automation. 0 = no glow.
+function layerGlow(name) {
+  const e = glowState[name];
+  if (!e || !e.on) return 0;
+  return $('glow_' + name) ? pval('glow_' + name) / 100 : e.strength / 100;
+}
+
 function fxColor(name) {
   const c = effectColors[name];
   if (!c) return bgPalette.accent;
@@ -2464,7 +2649,7 @@ async function analyzeLogoPalette(img) {
 // ---------- Range value display
 [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
-  'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset',
+  'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset', 'shockSize', 'shockSpeed', 'shockRange',
   'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
@@ -2502,6 +2687,49 @@ async function analyzeLogoPalette(img) {
   update();
 });
 
+// ---------- Double-click any slider to type an exact value ----------
+// Works for every <input type="range"> on the page, including ones created
+// dynamically (flare/text instances) — uses a single delegated listener.
+document.addEventListener('dblclick', (e) => {
+  const r = e.target;
+  if (!r || r.tagName !== 'INPUT' || r.type !== 'range') return;
+  if (document.querySelector('.range-edit')) return; // one editor at a time
+  const rect = r.getBoundingClientRect();
+  const inp = document.createElement('input');
+  inp.type = 'number';
+  inp.className = 'range-edit';
+  inp.value = r.value;
+  if (r.min !== '') inp.min = r.min;
+  if (r.max !== '') inp.max = r.max;
+  inp.step = r.step || 'any';
+  inp.style.left = rect.left + 'px';
+  inp.style.top = rect.top + 'px';
+  inp.style.width = Math.max(72, rect.width) + 'px';
+  document.body.appendChild(inp);
+  inp.focus(); inp.select();
+  let closed = false;
+  const commit = (apply) => {
+    if (closed) return; closed = true;
+    if (apply) {
+      let v = parseFloat(inp.value);
+      if (!isNaN(v)) {
+        const mn = parseFloat(r.min), mx = parseFloat(r.max);
+        if (!isNaN(mn)) v = Math.max(mn, v);
+        if (!isNaN(mx)) v = Math.min(mx, v);
+        r.value = v;
+        r.dispatchEvent(new Event('input', { bubbles: true }));
+        r.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    inp.remove();
+  };
+  inp.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); commit(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); commit(false); }
+  });
+  inp.addEventListener('blur', () => commit(true));
+});
+
 // Toggle checkboxes — redraw preview on change
 ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow',
  'tgFlares', 'partMirror',
@@ -2517,7 +2745,7 @@ async function analyzeLogoPalette(img) {
 });
 
 // Particle origin / direction + flare orientation + rgb direction — redraw
-['partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape'].forEach(id => {
+['partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape', 'shockType'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('change', () => {
@@ -2588,6 +2816,7 @@ const FX_TOGGLES = {
   grain:     ['tgGrain'],
   ambient:   ['tgAmbient'],
   flares:    ['tgFlares'],
+  glow:      ['tgGlow'],
   camerashake: ['tgCameraShake'],
   rgbsplit:  ['tgRgbSplit'],
   image:     ['tgImage'],
@@ -2599,18 +2828,18 @@ const FX_TOGGLES = {
   blur:      ['tgBlur'],
 };
 const FX_TITLES = {
-  glowbg: 'Glow Background', shockwave: 'Shockwave', logoglow: 'Logo Glow',
+  glowbg: 'Logo Light', shockwave: 'Shockwave', logoglow: 'Logo Glow',
   particles: 'Particles', spectrum: 'Audio Spectrum', grain: 'Film Grain', ambient: 'Ambient FX',
-  flares: 'Optical Flares',
+  flares: 'Optical Flares', glow: 'Glow',
   camerashake: 'Camera Shake', rgbsplit: 'RGB Split', image: 'Image / Video', fade: 'Fade',
   background: 'Background Image', logo: 'Logo', vignette: 'Vignette', text: 'Text', blur: 'Blur',
 };
-const FX_ORDER = ['background', 'logo', 'glowbg', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flares', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
+const FX_ORDER = ['background', 'logo', 'glowbg', 'glow', 'shockwave', 'logoglow', 'particles', 'spectrum', 'grain', 'ambient', 'flares', 'camerashake', 'rgbsplit', 'blur', 'image', 'vignette', 'text', 'fade'];
 
 // LAYER ORDER — a single stack the user can reorder by drag & drop. Read top to
 // bottom = back to front (top card drawn first, bottom drawn last/on top). The
 // Background effect is always forced to the very back regardless of its slot.
-const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flares', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
+const DEFAULT_FX_ORDER = ['background', 'ambient', 'glowbg', 'glow', 'logoglow', 'shockwave', 'logo', 'image', 'particles', 'flares', 'spectrum', 'grain', 'blur', 'rgbsplit', 'camerashake', 'vignette', 'text', 'fade'];
 let fxOrder = DEFAULT_FX_ORDER.slice();
 function rebuildFxOrder() {
   const stack = $('fxStack');
@@ -2709,7 +2938,12 @@ function addEffect(fx) {
   if (fx === 'flares' && flareInstances.length === 0 && typeof addFlareInstance === 'function') {
     addFlareInstance();
   }
+  // Text starts with one block so the card isn't empty.
+  if (fx === 'text' && textInstances.length === 0 && typeof addTextInstance === 'function') {
+    addTextInstance();
+  }
   rebuildAddMenu();
+  if (typeof rebuildGlowList === 'function') rebuildGlowList();
   redrawPreviewSafe();
 }
 function removeEffect(fx) {
@@ -2720,6 +2954,7 @@ function removeEffect(fx) {
   // If this flare was being positioned, stop the picker.
   if (flarePlacing === fx && typeof setFlarePlacing === 'function') setFlarePlacing(fx);
   rebuildAddMenu();
+  if (typeof rebuildGlowList === 'function') rebuildGlowList();
   redrawPreviewSafe();
 }
 function rebuildAddMenu() {
@@ -2762,6 +2997,7 @@ $('fxAddBtn').addEventListener('click', () => {
 });
 
 rebuildAddMenu();
+if (typeof rebuildGlowList === 'function') rebuildGlowList();
 
 // ============================================================
 // EFFECT CARD CHROME — collapse toggle + gear settings (per card)
@@ -4061,9 +4297,10 @@ function drawFrame(ctx, w, h, time, bass) {
         break;
       case 'glowbg':
         if (tgGlowBg && state.logoImg) {
+          const gx = flarePos.glow.x * w, gy = flarePos.glow.y * h;
           const glowRadius = Math.max(logoW, logoH) * (0.9 + bassAdj * 0.5) * glowBgSize;
           const glowAlpha = Math.min(0.95, Math.min(0.85, 0.25 + bassAdj * 0.75 * logoBounce) * glowBgInt);
-          const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
+          const glowGrad = ctx.createRadialGradient(gx, gy, 0, gx, gy, glowRadius);
           glowGrad.addColorStop(0,   rgba(glowColor, glowAlpha));
           glowGrad.addColorStop(0.3, rgba(glowColor, glowAlpha * 0.55));
           glowGrad.addColorStop(0.7, rgba(glowColor, glowAlpha * 0.15));
@@ -4080,8 +4317,17 @@ function drawFrame(ctx, w, h, time, bass) {
         }
         break;
       case 'shockwave':
-        if (tgShockwave && state.logoImg && effectsAmt > 0.01) {
-          drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, fxColor('shockwave'), Math.max(logoW, logoH));
+        if (tgShockwave && effectsAmt > 0.01) {
+          // Origin is its own draggable point now — no longer tied to the logo,
+          // so the shockwave works with or without a logo in the project.
+          const sox = flarePos.shock.x * w, soy = flarePos.shock.y * h;
+          const baseR = state.logoImg ? Math.max(logoW, logoH) : h * 0.18;
+          drawPulseWaves(ctx, sox, soy, w, h, time, effectsAmt, fxColor('shockwave'), baseR, {
+            type: $('shockType') ? $('shockType').value : 'color',
+            sizeMul: $('shockSize') ? pval('shockSize') / 100 : 1,
+            speedMul: $('shockSpeed') ? pval('shockSpeed') / 100 : 1,
+            rangeMul: $('shockRange') ? pval('shockRange') / 100 : 1,
+          });
         }
         break;
       case 'particles':
@@ -4152,7 +4398,7 @@ function drawFrame(ctx, w, h, time, bass) {
         }
         break;
       case 'text':
-        if (tgText) drawTextEffect(ctx, w, h, bassAdj, highAdj);
+        if (tgText) { for (const t of textInstances) drawTextEffect(ctx, w, h, bassAdj, highAdj, t); }
         break;
       case 'blur':
         if (tgBlur) drawBlurLayer(ctx, w, h, (pval('blurStr') / 100) * 40);
@@ -4164,9 +4410,24 @@ function drawFrame(ctx, w, h, time, bass) {
   }
 
   // ===== Compose the layer stack =====
+  // The Glow effect wraps a layer's own drawing in a shadow bloom, so selected
+  // layers glow individually (their internal glow) rather than a flat screen glow.
+  const tgGlow = $('tgGlow') ? $('tgGlow').checked : false;
+  function renderFxGlow(name) {
+    const gs = tgGlow ? layerGlow(name) : 0;
+    if (gs > 0.01) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,255,255,0.92)';
+      ctx.shadowBlur = gs * Math.max(w, h) * 0.03;
+      renderFx(name);
+      ctx.restore();
+    } else {
+      renderFx(name);
+    }
+  }
   // Background is forced to the very back regardless of where its card sits.
-  renderFx('background');
-  for (const _fx of fxOrder) { if (_fx !== 'background') renderFx(_fx); }
+  renderFxGlow('background');
+  for (const _fx of fxOrder) { if (_fx !== 'background') renderFxGlow(_fx); }
 
   // ========== Outro fade-to-black (shorts only) ==========
   // Same smoothstep as the intro, but ramping UP to full black over the clip's
@@ -4263,11 +4524,60 @@ function drawBackgroundWithShakeAndDesat(ctx, w, h, bassAdj, bgBounce, desatAmt,
 // ============================================================
 // NEW: Expanding pulse wave rings from bass onsets
 // ============================================================
-function drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, color, baseRadius) {
+function drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, color, baseRadius, opts) {
   // Only fire on "THE ONE" hits, and only at/after the FX start marker
   if (!shockwaveOnsets || shockwaveOnsets.length === 0) return;
-  const lifetime = 1.1; // slightly longer — gives shockwave more stage time
-  const maxRadius = Math.max(w, h) * 0.72; // bigger reach (was 0.55)
+  opts = opts || {};
+  const type = opts.type || 'color';
+  const sizeMul  = opts.sizeMul  == null ? 1 : opts.sizeMul;   // ring thickness / body
+  const speedMul = opts.speedMul == null ? 1 : opts.speedMul;  // expansion speed
+  const rangeMul = opts.rangeMul == null ? 1 : opts.rangeMul;  // reach
+  const lifetime = 1.1 / Math.max(0.2, speedMul);
+  const maxRadius = Math.max(w, h) * 0.72 * rangeMul;
+  const baseR = baseRadius * sizeMul;
+
+  // --- Displacement / refraction type: warp the underlying pixels in a ring ---
+  if (type === 'displacement') {
+    for (let o = 0; o < shockwaveOnsets.length; o++) {
+      const onset = shockwaveOnsets[o];
+      if (onset.time < state.fxStart) continue;
+      const age = time - onset.time;
+      if (age < 0 || age > lifetime) continue;
+      const progress = age / lifetime;
+      const radius = baseR * 0.45 + (maxRadius - baseR * 0.45) * easeOutCubic(progress);
+      const fade = Math.pow(1 - progress, 1.2) * onset.strength * effectsAmt;
+      if (fade < 0.02) continue;
+      const band = Math.max(8, h * 0.03 * sizeMul * (1 - progress * 0.4));
+      const inner = Math.max(0, radius - band), outer = radius + band;
+
+      // Refract: redraw the current canvas, magnified about the origin, clipped
+      // to the ring annulus — bends the image like a real shockwave passing.
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, outer, 0, Math.PI * 2);
+      ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+      ctx.clip('evenodd');
+      const sc = 1 + 0.12 * sizeMul * (1 - progress) * (0.4 + 0.6 * fade);
+      ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+      try { ctx.drawImage(ctx.canvas, 0, 0); } catch (e) {}
+      ctx.restore();
+
+      // Bright leading rim + thin dark trailing edge for definition.
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.strokeStyle = rgba([255, 255, 255], 0.22 * fade);
+      ctx.lineWidth = Math.max(1, band * 0.35);
+      ctx.beginPath(); ctx.arc(cx, cy, outer * 0.99, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.strokeStyle = rgba([0, 0, 0], 0.18 * fade);
+      ctx.lineWidth = Math.max(1, band * 0.3);
+      ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, inner * 1.01), 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    return;
+  }
 
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
@@ -4279,14 +4589,14 @@ function drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, color, baseRadius) 
     if (age < 0 || age > lifetime) continue;
 
     const progress = age / lifetime;     // 0..1
-    const radius = baseRadius * 0.45 + (maxRadius - baseRadius * 0.45) * easeOutCubic(progress);
+    const radius = baseR * 0.45 + (maxRadius - baseR * 0.45) * easeOutCubic(progress);
     // Boosted alpha — shockwave is the star of the show now
     const alpha = Math.pow(1 - progress, 1.2) * 0.95 * effectsAmt * onset.strength;
     if (alpha < 0.01) continue;
 
-    // === Main ring — thick, glowing ===
+    // === Main ring — thick, glowing (thickness scales with Size) ===
     ctx.strokeStyle = rgba(color, alpha);
-    ctx.lineWidth = Math.max(1.5, (1 - progress) * h * 0.014); // ~2.3× thicker
+    ctx.lineWidth = Math.max(1.5, (1 - progress) * h * 0.014 * sizeMul);
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -4305,7 +4615,7 @@ function drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, color, baseRadius) 
     if (progress < 0.6) {
       const wakeFade = 1 - (progress / 0.6);
       ctx.strokeStyle = rgba(color, alpha * 0.45 * wakeFade);
-      ctx.lineWidth = Math.max(2, wakeFade * h * 0.04);
+      ctx.lineWidth = Math.max(2, wakeFade * h * 0.04 * sizeMul);
       ctx.beginPath();
       ctx.arc(cx, cy, radius * 0.92, 0, Math.PI * 2);
       ctx.stroke();
@@ -4313,7 +4623,7 @@ function drawPulseWaves(ctx, cx, cy, w, h, time, effectsAmt, color, baseRadius) 
 
     // === Secondary trailing ring (after main, faint echo) ===
     if (progress > 0.15 && progress < 0.9) {
-      const trailRadius = baseRadius * 0.45 + (maxRadius - baseRadius * 0.45) * easeOutCubic(Math.max(0, progress - 0.12));
+      const trailRadius = baseR * 0.45 + (maxRadius - baseR * 0.45) * easeOutCubic(Math.max(0, progress - 0.12));
       const trailAlpha = alpha * 0.35;
       ctx.strokeStyle = rgba(color, trailAlpha);
       ctx.lineWidth = Math.max(1, (1 - progress) * h * 0.004);
@@ -5303,17 +5613,18 @@ function textFontSpec(fontStyle) {
   return { family: '"Cormorant Garamond", serif', weight: '400', tracking: 0.15, upper: false };
 }
 
-function drawTextEffect(ctx, w, h, bassAdj, highAdj) {
-  const content = $('textContent') ? $('textContent').value : '';
+function drawTextEffect(ctx, w, h, bassAdj, highAdj, inst) {
+  if (!inst) return;
+  const content = inst.content || '';
   if (!content || !content.trim()) return;
-  const f = textFontSpec($('fontStyle') ? $('fontStyle').value : 'cormorant');
-  const align = $('textAlign') ? $('textAlign').value : 'center';
-  const sizeMul = $('textSize') ? pval('textSize') / 100 : 1;
-  const rot = $('textRot') ? pval('textRot') : 0;
-  const color = ($('textColor') ? $('textColor').value : '#ffffff');
-  const opacity = $('textOpacity') ? pval('textOpacity') / 100 : 1;
+  const f = textFontSpec(inst.font || 'cormorant');
+  const align = inst.align || 'center';
+  const sizeMul = inst.size == null ? 1 : inst.size;
+  const rot = inst.rot || 0;
+  const color = inst.color || '#ffffff';
+  const opacity = inst.opacity == null ? 1 : inst.opacity;
   if (opacity <= 0.001) return;
-  const px = flarePos.text.x * w, py = flarePos.text.y * h;
+  const px = inst.x * w, py = inst.y * h;
   const size = h * 0.05 * sizeMul;
   const lines = content.split('\n');
 
@@ -5529,7 +5840,7 @@ function drawFlarePlacingGuide() {
   ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
   const specShapeNow = $('specShape') ? $('specShape').value : 'line';
-  const lbl = (flarePlacing.indexOf('fl_') === 0) ? 'FLARE' : flarePlacing === 'text' ? 'TEXT' : flarePlacing === 'specStart' ? (specShapeNow === 'polar' ? 'CENTER' : 'SPECTRUM START') : flarePlacing === 'specEnd' ? 'SPECTRUM END' : 'IMAGE';
+  const lbl = (flarePlacing.indexOf('fl_') === 0) ? 'FLARE' : (flarePlacing.indexOf('tx_') === 0) ? 'TEXT' : flarePlacing === 'shock' ? 'SHOCKWAVE' : flarePlacing === 'glow' ? 'LOGO LIGHT' : flarePlacing === 'specStart' ? (specShapeNow === 'polar' ? 'CENTER' : 'SPECTRUM START') : flarePlacing === 'specEnd' ? 'SPECTRUM END' : 'IMAGE';
   ctx.fillText(lbl, px, py - r * 1.6);
   ctx.restore();
 }
@@ -5828,7 +6139,7 @@ fxMarkerHit.addEventListener('touchstart', startMarkerDrag, { passive: false });
 // Toggle a flare's "Set position" button, then click/drag anywhere on the
 // preview to move that flare. Position is stored normalized (0..1).
 // ============================================================
-const PLACEABLE = ['image', 'text', 'specStart', 'specEnd'];
+const PLACEABLE = ['image', 'specStart', 'specEnd', 'shock', 'glow'];
 function setFlarePlacing(id) {
   flarePlacing = (flarePlacing === id) ? '' : id;
   PLACEABLE.forEach(f => {
@@ -5877,12 +6188,21 @@ if ($('specColorMode')) $('specColorMode').addEventListener('change', () => { up
 });
 updateSpecColorUI();
 
+// ---- Shockwave: hide the colour row for the displacement type ----
+function updateShockUI() {
+  const t = $('shockType') ? $('shockType').value : 'color';
+  const row = $('shockColorRow');
+  if (row) row.style.display = (t === 'displacement') ? 'none' : '';
+}
+if ($('shockType')) $('shockType').addEventListener('change', updateShockUI);
+updateShockUI();
+
 // Keep the pixel inputs correct on first load and whenever the export resolution changes.
 if ($('resolution')) $('resolution').addEventListener('change', syncSpecNumInputs);
 syncSpecNumInputs();
 
 // ---- Spectrum start/end numeric inputs (pixels at export resolution) ----
-[['specStartX','specStart','x'],['specStartY','specStart','y'],['specEndX','specEnd','x'],['specEndY','specEnd','y']].forEach(([inp, key, axis]) => {
+[['specStartX','specStart','x'],['specStartY','specStart','y'],['specEndX','specEnd','x'],['specEndY','specEnd','y'],['shockOriginX','shock','x'],['shockOriginY','shock','y'],['glowPosX','glow','x'],['glowPosY','glow','y']].forEach(([inp, key, axis]) => {
   const el = $(inp);
   if (!el) return;
   el.addEventListener('input', () => {
@@ -5922,7 +6242,8 @@ function flarePointerToPos(e) {
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
   flarePos[flarePlacing].x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   flarePos[flarePlacing].y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-  if (flarePlacing === 'specStart' || flarePlacing === 'specEnd') syncSpecNumInputs();
+  if (flarePlacing === 'specStart' || flarePlacing === 'specEnd' || flarePlacing === 'shock' || flarePlacing === 'glow') syncSpecNumInputs();
+  if (flarePlacing.indexOf('tx_') === 0) syncTextNumInputs(flarePlacing);
   drawPreviewFrame(getCurrentTime(), getCurrentBass());
   autosaveDebounced();
 }
@@ -7850,7 +8171,7 @@ drawEqWidget();
 // ============================================================
 const PRESET_SLIDER_IDS = [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
-  'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset',
+  'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset', 'shockSize', 'shockSpeed', 'shockRange',
   'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
@@ -7861,8 +8182,8 @@ const PRESET_SLIDER_IDS = [
   'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ];
 const PRESET_TEXT_IDS = ['textContent'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape', 'specColorMode'];
-const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlares', 'partMirror',
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape', 'specColorMode', 'shockType'];
+const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlares', 'tgGlow', 'partMirror',
   'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame', 'convertMp4',
   'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'];
 const PRESET_COLOR_IDS = ['fadeColor', 'textColor', 'specGradA', 'specGradB'];
@@ -7891,6 +8212,11 @@ function gatherPreset() {
       useBg: f.useBg, hex: f.hex, bounce: f.bounce, x: f.x, y: f.y,
       glow: f.glow, streak: f.streak, ghosts: f.ghosts, star: f.star,
     })),
+    textInstances: textInstances.map(t => ({
+      content: t.content, font: t.font, align: t.align, size: t.size,
+      rot: t.rot, opacity: t.opacity, color: t.color, x: t.x, y: t.y,
+    })),
+    glow: JSON.parse(JSON.stringify(glowState)),
     order: fxOrder.slice(),
     bypass: { ...fxBypassed },
     colors2: {},
@@ -7898,6 +8224,8 @@ function gatherPreset() {
     textPos: { x: flarePos.text.x, y: flarePos.text.y },
     specStart: { x: flarePos.specStart.x, y: flarePos.specStart.y },
     specEnd: { x: flarePos.specEnd.x, y: flarePos.specEnd.y },
+    shockPos: { x: flarePos.shock.x, y: flarePos.shock.y },
+    glowPos: { x: flarePos.glow.x, y: flarePos.glow.y },
     specPath: specPath.map(p => ({ x: p.x, y: p.y })),
     automations: JSON.parse(JSON.stringify(automations)),
   };
@@ -8051,6 +8379,51 @@ function applyPreset(preset, silent) {
   }
   renderFlareList();
 
+  // Text — new unlimited-instance format, with migration from the old single
+  // text (preset.text.textContent + textSize/Rot/Opacity sliders + textPos).
+  textInstances = [];
+  textPruneFlarePosKeys();
+  if (Array.isArray(preset.textInstances)) {
+    preset.textInstances.forEach(t => {
+      const inst = defaultText();
+      if (t && typeof t === 'object') {
+        if (typeof t.content === 'string') inst.content = t.content;
+        if (typeof t.font === 'string') inst.font = t.font;
+        if (typeof t.align === 'string') inst.align = t.align;
+        if (typeof t.color === 'string') inst.color = t.color;
+        ['size', 'rot', 'opacity', 'x', 'y'].forEach(k => { if (typeof t[k] === 'number') inst[k] = t[k]; });
+      }
+      textInstances.push(inst);
+      flarePos[textKey(inst)] = inst;
+    });
+  } else if (preset.text && typeof preset.text.textContent === 'string' && preset.text.textContent.trim()) {
+    const inst = defaultText();
+    inst.content = preset.text.textContent;
+    const sl = preset.sliders || {}, sel = preset.selects || {}, c2 = preset.colors2 || {};
+    if (sel.fontStyle) inst.font = sel.fontStyle;
+    if (sel.textAlign) inst.align = sel.textAlign;
+    if (sl.textSize) inst.size = parseFloat(sl.textSize) / 100;
+    if (sl.textRot) inst.rot = parseFloat(sl.textRot);
+    if (sl.textOpacity) inst.opacity = parseFloat(sl.textOpacity) / 100;
+    if (c2.textColor) inst.color = c2.textColor;
+    if (preset.textPos) { if (typeof preset.textPos.x === 'number') inst.x = preset.textPos.x; if (typeof preset.textPos.y === 'number') inst.y = preset.textPos.y; }
+    textInstances.push(inst);
+    flarePos[textKey(inst)] = inst;
+  }
+  renderTextList();
+
+  // Glow per-layer selection + strength.
+  glowState = {};
+  if (preset.glow && typeof preset.glow === 'object') {
+    Object.keys(preset.glow).forEach(layer => {
+      const g = preset.glow[layer];
+      if (g && typeof g === 'object') {
+        glowState[layer] = { on: !!g.on, strength: typeof g.strength === 'number' ? g.strength : 100 };
+      }
+    });
+  }
+  if (typeof rebuildGlowList === 'function') rebuildGlowList();
+
   // Layer order (drag & drop). Reorder the DOM cards to match, then refresh.
   if (Array.isArray(preset.order) && preset.order.length) {
     applyFxOrderToDom(preset.order);
@@ -8089,12 +8462,22 @@ function applyPreset(preset, silent) {
     if (typeof preset.specEnd.x === 'number') flarePos.specEnd.x = Math.max(0, Math.min(1, preset.specEnd.x));
     if (typeof preset.specEnd.y === 'number') flarePos.specEnd.y = Math.max(0, Math.min(1, preset.specEnd.y));
   }
+  if (preset.shockPos) {
+    if (typeof preset.shockPos.x === 'number') flarePos.shock.x = Math.max(0, Math.min(1, preset.shockPos.x));
+    if (typeof preset.shockPos.y === 'number') flarePos.shock.y = Math.max(0, Math.min(1, preset.shockPos.y));
+  }
+  if (preset.glowPos) {
+    if (typeof preset.glowPos.x === 'number') flarePos.glow.x = Math.max(0, Math.min(1, preset.glowPos.x));
+    if (typeof preset.glowPos.y === 'number') flarePos.glow.y = Math.max(0, Math.min(1, preset.glowPos.y));
+  }
   specPath = Array.isArray(preset.specPath)
     ? preset.specPath.filter(p => p && typeof p.x === 'number' && typeof p.y === 'number')
                      .map(p => ({ x: Math.max(0, Math.min(1, p.x)), y: Math.max(0, Math.min(1, p.y)) }))
     : [];
   if (typeof updateSpecShapeUI === 'function') updateSpecShapeUI();
   if (typeof updateSpecColorUI === 'function') updateSpecColorUI();
+  if (typeof updateShockUI === 'function') updateShockUI();
+  if (typeof syncSpecNumInputs === 'function') syncSpecNumInputs();
   if (typeof updateSpecPathInfo === 'function') updateSpecPathInfo();
   if (typeof syncSpecNumInputs === 'function') syncSpecNumInputs();
 
@@ -8274,7 +8657,7 @@ function getDefaultPreset() {
       logoSize: '110', logoBounce: '100', bgBounce: '100',
       desat: '85', dark: '60', shake: '50', vig: '100',
       spectrum: '70', effects: '85', crf: '23',
-      shockThresh: '50', shockReset: '5',
+      shockThresh: '50', shockReset: '5', shockSize: '100', shockSpeed: '100', shockRange: '100',
       specFStart: '20', specFEnd: '8000', specBands: '48',
       specMaxH: '22', specRadius: '22', specAngle: '0', specDur: '100', specOff: '0',
       specThick: '55', specSmooth: '30',
@@ -8293,14 +8676,14 @@ function getDefaultPreset() {
       partOrigin: 'middle', partDirection: 'center',
       rgbDir: 'horizontal', partMode: 'burst',
       textAlign: 'center', logoBlend: 'source-over', mediaBlend: 'source-over',
-      specMode: 'single', specShape: 'line', specColorMode: 'single',
+      specMode: 'single', specShape: 'line', specColorMode: 'single', shockType: 'color',
     },
     toggles: {
       tgShockwave: false, tgParticles: false,
       tgSpectrum: false, specFlipH: false, specFlipV: false,
       tgGrain: false, tgAmbient: false,
       tgGlowBg: false, tgLogoGlow: false,
-      tgFlares: false,
+      tgFlares: false, tgGlow: false,
       partMirror: false,
       tgCameraShake: false, tgRgbSplit: false, tgImage: false, tgFade: false,
       fadeIn: true, fadeOut: true, fadeColorOn: false, fadeBlurOn: false, rgbReact: true,
@@ -8321,12 +8704,16 @@ function getDefaultPreset() {
       },
     },
     flareInstances: [],
+    textInstances: [],
+    glow: {},
     order: DEFAULT_FX_ORDER.slice(),
     colors2: { fadeColor: '#000000', textColor: '#ffffff', specGradA: '#5f6ee7', specGradB: '#5efdf7' },
     mediaPos: { x: 0.5, y: 0.5 },
     textPos: { x: 0.5, y: 0.88 },
     specStart: { x: 0.08, y: 0.82 },
     specEnd: { x: 0.92, y: 0.82 },
+    shockPos: { x: 0.5, y: 0.5 },
+    glowPos: { x: 0.5, y: 0.5 },
     automations: {},
     bypass: {},
   };

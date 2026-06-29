@@ -1596,8 +1596,8 @@
             <div class="field"><label>Opacity <span class="v" id="specOpacityV">100%</span></label><input type="range" id="specOpacity" min="0" max="100" value="100" /></div>
 
             <div class="toggles" style="margin:8px 0">
-              <label><input type="checkbox" id="specFlipH"><span>Flip horizontal</span></label>
-              <label><input type="checkbox" id="specFlipV"><span>Flip vertical</span></label>
+              <label><input type="checkbox" id="specFlipH"><span>Mirror horizontal</span></label>
+              <label><input type="checkbox" id="specFlipV"><span>Mirror vertical</span></label>
             </div>
 
             <!-- LINE layout -->
@@ -1630,9 +1630,22 @@
               <div style="font-size:9px;color:var(--ink-faint);margin-top:6px" id="specPathInfo">0 points</div>
             </div>
 
-            <div class="color-row">
+            <div class="field"><label>Color</label>
+              <select id="specColorMode" class="fx-select">
+                <option value="single" selected>Single color</option>
+                <option value="gradient">Gradient</option>
+              </select>
+            </div>
+            <div class="color-row" id="specSingleColor">
               <label class="cb"><input type="checkbox" id="cbBg_spectrum" checked> Use Background Color</label>
               <input type="color" id="col_spectrum" value="#ff8c3c" disabled>
+            </div>
+            <div class="color-row" id="specGradientColor" style="display:none">
+              <span class="cb" style="cursor:default">Gradient (root → tip)</span>
+              <span style="display:flex;gap:6px;align-items:center">
+                <input type="color" id="specGradA" value="#5f6ee7">
+                <input type="color" id="specGradB" value="#5efdf7">
+              </span>
             </div>
             <details class="fx-adv">
               <summary>Advanced</summary>
@@ -4682,115 +4695,118 @@ function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, mode) {
   specBarLastTime = time;
 
   // --- Draw the spectrum (After Effects style) ---
-  // Supported shapes: Line (start→end), Polar (around a circle), Path (polyline).
-  // Each bar grows perpendicular to the local baseline; Single = one side,
-  // Mirror = both sides. Flip H/V mirrors the whole thing on screen.
-  const color = fxColor('spectrum');
+  // Shapes: Line (start→end), Polar (circle), Path (polyline). Each bar grows
+  // perpendicular to its baseline; Sides = single/mirror per bar. Mirror H/V
+  // reflect the WHOLE spectrum across the centre axis (original kept too).
   const maxBarH = h * maxHPct;
   const baseAlpha = effectsAmt * specOpacity;   // brightness from slider+opacity, never bass
   const mirror = mode === 'mirror';
   const shape = $('specShape') ? $('specShape').value : 'line';
-  const flipH = $('specFlipH') && $('specFlipH').checked;
-  const flipV = $('specFlipV') && $('specFlipV').checked;
+  const mirrorH = $('specFlipH') && $('specFlipH').checked;
+  const mirrorV = $('specFlipV') && $('specFlipV').checked;
+
+  // Colour mode: single flat colour, or a pure root→tip gradient (no white cap).
+  const colorMode = $('specColorMode') ? $('specColorMode').value : 'single';
+  const colSingle = fxColor('spectrum');
+  const colA = $('specGradA') ? hexToRgb($('specGradA').value) : [95, 110, 231];
+  const colB = $('specGradB') ? hexToRgb($('specGradB').value) : [94, 253, 247];
 
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  if (flipH || flipV) {
-    ctx.translate(w / 2, h / 2);
-    ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-    ctx.translate(-w / 2, -h / 2);
-  }
 
-  // Draw one bar centered at (px,py), grown along the direction perpendicular to
-  // `ang` (i.e. local -Y after rotating by ang). Mirror adds the opposite side.
+  // Draw one bar centered at (px,py), grown perpendicular to `ang` (local -Y).
   function bar(px, py, ang, bw, bh, alpha) {
     ctx.save();
     ctx.translate(px, py);
     ctx.rotate(ang);
-    drawSpectrumBar(ctx, -bw / 2, -bh, bw, bh, color, alpha, false);
-    if (mirror) drawSpectrumBar(ctx, -bw / 2, 0, bw, bh, color, alpha, true);
+    drawSpectrumBar(ctx, -bw / 2, -bh, bw, bh, alpha, false, colorMode, colSingle, colA, colB);
+    if (mirror) drawSpectrumBar(ctx, -bw / 2, 0, bw, bh, alpha, true, colorMode, colSingle, colA, colB);
     ctx.restore();
   }
 
-  if (shape === 'polar') {
-    const cx = flarePos.specStart.x * w, cy = flarePos.specStart.y * h;
-    const R = h * (parseFloat($('specRadius') ? $('specRadius').value : 22) / 100);
-    const startA = (parseFloat($('specAngle') ? $('specAngle').value : 0) || 0) * Math.PI / 180;
-    const circ = 2 * Math.PI * Math.max(1, R);
-    const barWidth = Math.max(1, (circ / bands) * thicknessPct);
-    for (let i = 0; i < bands; i++) {
-      const v = specBarSmoothed[i];
-      if (v < 0.005) continue;
-      const barH = maxBarH * v;
-      const theta = startA + 2 * Math.PI * (i / bands);
-      const bx = cx + Math.cos(theta) * R, by = cy + Math.sin(theta) * R;
-      bar(bx, by, theta + Math.PI / 2, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
-    }
-  } else if (shape === 'path' && specPath.length >= 2) {
-    const pts = specPath.map(p => ({ x: p.x * w, y: p.y * h }));
-    const segLen = []; let total = 0;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
-      segLen.push(l); total += l;
-    }
-    if (total >= 1) {
-      const barWidth = Math.max(1, (total / bands) * thicknessPct);
+  // Paint the whole spectrum once (used for the original + each reflection).
+  function drawAll() {
+    if (shape === 'polar') {
+      const cx = flarePos.specStart.x * w, cy = flarePos.specStart.y * h;
+      const R = h * (parseFloat($('specRadius') ? $('specRadius').value : 22) / 100);
+      const startA = (parseFloat($('specAngle') ? $('specAngle').value : 0) || 0) * Math.PI / 180;
+      const circ = 2 * Math.PI * Math.max(1, R);
+      const barWidth = Math.max(1, (circ / bands) * thicknessPct);
       for (let i = 0; i < bands; i++) {
         const v = specBarSmoothed[i];
         if (v < 0.005) continue;
         const barH = maxBarH * v;
-        let d = (i + 0.5) / bands * total, s = 0;
-        while (s < segLen.length - 1 && d > segLen[s]) { d -= segLen[s]; s++; }
-        const t = segLen[s] > 0 ? d / segLen[s] : 0;
-        const a = pts[s], b = pts[s + 1];
-        const px = a.x + (b.x - a.x) * t, py = a.y + (b.y - a.y) * t;
-        const ang = Math.atan2(b.y - a.y, b.x - a.x);
-        bar(px, py, ang, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+        const theta = startA + 2 * Math.PI * (i / bands);
+        const bx = cx + Math.cos(theta) * R, by = cy + Math.sin(theta) * R;
+        bar(bx, by, theta + Math.PI / 2, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
       }
-    }
-  } else {
-    // Line (default; also the fallback when Path has fewer than 2 points)
-    const x0 = flarePos.specStart.x * w, y0 = flarePos.specStart.y * h;
-    const x1 = flarePos.specEnd.x * w,   y1 = flarePos.specEnd.y * h;
-    const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
-    if (len >= 1) {
-      const ang = Math.atan2(dy, dx);
-      const barWidth = Math.max(1, (len / bands) * thicknessPct);
-      for (let i = 0; i < bands; i++) {
-        const v = specBarSmoothed[i];
-        if (v < 0.005) continue;
-        const barH = maxBarH * v;
-        const d = (i + 0.5) / bands * len;
-        bar(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d, ang, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+    } else if (shape === 'path' && specPath.length >= 2) {
+      const pts = specPath.map(p => ({ x: p.x * w, y: p.y * h }));
+      const segLen = []; let total = 0;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+        segLen.push(l); total += l;
+      }
+      if (total >= 1) {
+        const barWidth = Math.max(1, (total / bands) * thicknessPct);
+        for (let i = 0; i < bands; i++) {
+          const v = specBarSmoothed[i];
+          if (v < 0.005) continue;
+          const barH = maxBarH * v;
+          let d = (i + 0.5) / bands * total, s = 0;
+          while (s < segLen.length - 1 && d > segLen[s]) { d -= segLen[s]; s++; }
+          const t = segLen[s] > 0 ? d / segLen[s] : 0;
+          const a = pts[s], b = pts[s + 1];
+          const px = a.x + (b.x - a.x) * t, py = a.y + (b.y - a.y) * t;
+          const ang = Math.atan2(b.y - a.y, b.x - a.x);
+          bar(px, py, ang, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+        }
+      }
+    } else {
+      const x0 = flarePos.specStart.x * w, y0 = flarePos.specStart.y * h;
+      const x1 = flarePos.specEnd.x * w,   y1 = flarePos.specEnd.y * h;
+      const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+      if (len >= 1) {
+        const ang = Math.atan2(dy, dx);
+        const barWidth = Math.max(1, (len / bands) * thicknessPct);
+        for (let i = 0; i < bands; i++) {
+          const v = specBarSmoothed[i];
+          if (v < 0.005) continue;
+          const barH = maxBarH * v;
+          const d = (i + 0.5) / bands * len;
+          bar(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d, ang, barWidth, barH, baseAlpha * (0.4 + 0.6 * v));
+        }
       }
     }
   }
+
+  drawAll();
+  // Reflections across the centre axes — the original stays, a mirrored copy is
+  // added (true mirroring, not just flipping the whole thing to the other side).
+  if (mirrorH) { ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1); drawAll(); ctx.restore(); }
+  if (mirrorV) { ctx.save(); ctx.translate(0, h); ctx.scale(1, -1); drawAll(); ctx.restore(); }
+  if (mirrorH && mirrorV) { ctx.save(); ctx.translate(w, h); ctx.scale(-1, -1); drawAll(); ctx.restore(); }
 
   ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
 }
 
-// Spectrum bar — solid-core gradient with bright tip pointing toward center
-function drawSpectrumBar(ctx, x, y, bw, bh, color, alpha, tipAtBottom) {
+// Spectrum bar. Single mode = one flat colour. Gradient mode = pure root→tip
+// gradient between two colours. No brighter tip / white cap in either mode.
+function drawSpectrumBar(ctx, x, y, bw, bh, alpha, tipAtBottom, colorMode, colSingle, colA, colB) {
   if (bh < 0.5) return;
-  // Gradient: dim root at the edge, bright tip toward center
-  const grad = tipAtBottom
-    ? ctx.createLinearGradient(0, y, 0, y + bh)         // top: root at y, tip at y+bh
-    : ctx.createLinearGradient(0, y + bh, 0, y);         // bottom: root at y+bh, tip at y
-  grad.addColorStop(0, rgba(color, alpha * 0.25));
-  grad.addColorStop(0.7, rgba(color, alpha * 0.85));
-  grad.addColorStop(1, rgba(color, alpha));
-  ctx.fillStyle = grad;
-  ctx.fillRect(x, y, bw, bh);
-
-  // Thin bright cap at the tip for crispness
-  const capH = Math.max(1, Math.min(2.5, bh * 0.06));
-  ctx.fillStyle = rgba([255, 255, 255], alpha * 0.6);
-  if (tipAtBottom) {
-    ctx.fillRect(x, y + bh - capH, bw, capH);
+  if (colorMode === 'gradient') {
+    // Root sits at the baseline (colA), tip at the far end (colB).
+    const grad = tipAtBottom
+      ? ctx.createLinearGradient(0, y, 0, y + bh)     // baseline at y, tip at y+bh
+      : ctx.createLinearGradient(0, y + bh, 0, y);    // baseline at y+bh, tip at y
+    grad.addColorStop(0, rgba(colA, alpha));
+    grad.addColorStop(1, rgba(colB, alpha));
+    ctx.fillStyle = grad;
   } else {
-    ctx.fillRect(x, y, bw, capH);
+    ctx.fillStyle = rgba(colSingle, alpha);
   }
+  ctx.fillRect(x, y, bw, bh);
 }
 
 // ============================================================
@@ -5827,6 +5843,21 @@ function updateSpecShapeUI() {
 }
 if ($('specShape')) $('specShape').addEventListener('change', updateSpecShapeUI);
 updateSpecShapeUI();
+
+// ---- Spectrum colour mode: single colour vs gradient ----
+function updateSpecColorUI() {
+  const mode = $('specColorMode') ? $('specColorMode').value : 'single';
+  const single = $('specSingleColor'), grad = $('specGradientColor');
+  if (single) single.style.display = (mode === 'gradient') ? 'none' : '';
+  if (grad) grad.style.display = (mode === 'gradient') ? '' : 'none';
+}
+if ($('specColorMode')) $('specColorMode').addEventListener('change', () => { updateSpecColorUI(); redrawPreviewSafe(); autosaveDebounced(); });
+['specGradA', 'specGradB'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', () => { redrawPreviewSafe(); autosaveDebounced(); });
+});
+updateSpecColorUI();
+
 // Keep the pixel inputs correct on first load and whenever the export resolution changes.
 if ($('resolution')) $('resolution').addEventListener('change', syncSpecNumInputs);
 syncSpecNumInputs();
@@ -7811,11 +7842,11 @@ const PRESET_SLIDER_IDS = [
   'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ];
 const PRESET_TEXT_IDS = ['textContent'];
-const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape'];
+const PRESET_SELECT_IDS = ['fontStyle', 'resolution', 'framerate', 'partOrigin', 'partDirection', 'rgbDir', 'partMode', 'textAlign', 'logoBlend', 'mediaBlend', 'specMode', 'specShape', 'specColorMode'];
 const PRESET_TOGGLE_IDS = ['tgShockwave', 'tgParticles', 'tgSpectrum', 'specFlipH', 'specFlipV', 'tgGrain', 'tgAmbient', 'tgGlowBg', 'tgLogoGlow', 'tgFlares', 'partMirror',
   'tgCameraShake', 'tgRgbSplit', 'tgImage', 'tgFade', 'fadeIn', 'fadeOut', 'fadeColorOn', 'fadeBlurOn', 'rgbReact', 'frameByFrame', 'convertMp4',
   'tgBackground', 'tgLogo', 'tgVignette', 'tgText', 'tgBlur'];
-const PRESET_COLOR_IDS = ['fadeColor', 'textColor'];
+const PRESET_COLOR_IDS = ['fadeColor', 'textColor', 'specGradA', 'specGradB'];
 
 function gatherEffects() {
   const colors = {};
@@ -8044,6 +8075,7 @@ function applyPreset(preset, silent) {
                      .map(p => ({ x: Math.max(0, Math.min(1, p.x)), y: Math.max(0, Math.min(1, p.y)) }))
     : [];
   if (typeof updateSpecShapeUI === 'function') updateSpecShapeUI();
+  if (typeof updateSpecColorUI === 'function') updateSpecColorUI();
   if (typeof updateSpecPathInfo === 'function') updateSpecPathInfo();
   if (typeof syncSpecNumInputs === 'function') syncSpecNumInputs();
 
@@ -8242,7 +8274,7 @@ function getDefaultPreset() {
       partOrigin: 'middle', partDirection: 'center',
       rgbDir: 'horizontal', partMode: 'burst',
       textAlign: 'center', logoBlend: 'source-over', mediaBlend: 'source-over',
-      specMode: 'single', specShape: 'line',
+      specMode: 'single', specShape: 'line', specColorMode: 'single',
     },
     toggles: {
       tgShockwave: false, tgParticles: false,
@@ -8271,7 +8303,7 @@ function getDefaultPreset() {
     },
     flareInstances: [],
     order: DEFAULT_FX_ORDER.slice(),
-    colors2: { fadeColor: '#000000', textColor: '#ffffff' },
+    colors2: { fadeColor: '#000000', textColor: '#ffffff', specGradA: '#5f6ee7', specGradB: '#5efdf7' },
     mediaPos: { x: 0.5, y: 0.5 },
     textPos: { x: 0.5, y: 0.88 },
     specStart: { x: 0.08, y: 0.82 },

@@ -13,6 +13,8 @@ export default function SiteFooter() {
         <Link href="/privacy">Privacy</Link>
         <span className="dot">·</span>
         <Link href="/terms">Terms</Link>
+        <span className="dot">·</span>
+        <Link href="/support" className="foot-support">Support</Link>
       </nav>
     </footer>
   );

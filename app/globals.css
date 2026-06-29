@@ -368,6 +368,8 @@ body.studio-locked { overflow: hidden; }
 }
 .site-footer .foot-links a:hover { color: var(--ink-dim); }
 .site-footer .dot { opacity: 0.5; }
+.site-footer .foot-links a.foot-support { color: var(--green); font-weight: 600; }
+.site-footer .foot-links a.foot-support:hover { color: #7ad3a8; }
 
 /* legal pages (imprint / privacy / terms) */
 .legal {
@@ -404,6 +406,23 @@ body.studio-locked { overflow: hidden; }
   color: var(--ink-faint);
   background: var(--panel);
 }
+
+/* support / feedback page */
+.support-page strong { color: var(--ink); }
+.support-page .muted { color: var(--ink-faint); }
+.support-page .support-form,
+.support-page .support-signin,
+.support-page .support-sent { margin-top: 22px; }
+.support-page textarea {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 150px;
+  padding: 13px 14px; border-radius: 10px; border: 1px solid var(--line-2);
+  background: var(--panel); color: var(--ink); font-family: inherit; font-size: 14px; line-height: 1.6;
+}
+.support-page textarea:focus { outline: none; border-color: var(--accent); }
+.support-page .support-form .btn,
+.support-page .support-signin .btn { margin-top: 14px; }
+.support-page .err { color: var(--red); font-size: 13px; margin: 10px 0 0; }
+.support-page .ok { color: var(--green); }
 
 /* cancellation notice on the pricing card */
 .cancel-note {

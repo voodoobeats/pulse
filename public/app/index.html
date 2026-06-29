@@ -5593,42 +5593,60 @@ function resumeAudioCtx() {
 );
 
 function play() {
-  if (!state.audioBuffer || state.isPlaying) return;
+  if (!state.audioBuffer || state.isPlaying || state.startingPlayback) return;
   if (!bassEnv) { precomputeEnvelope(state.audioBuffer); detectOnsets(); precomputeSpectrogram(state.audioBuffer); computeShockwaveOnsets(); }
 
-  // Make sure the context is actually running before we start the source,
-  // otherwise the buffer plays into a suspended context = silence.
-  if (state.audioContext.state !== 'running') {
-    try { state.audioContext.resume(); } catch (e) {}
-  }
-  state.source = state.audioContext.createBufferSource();
-  state.source.buffer = state.audioBuffer;
-  state.source.connect(state.audioContext.destination);
-  state.source.start(0, state.pauseOffset);
-  state.startTime = state.audioContext.currentTime;
-  state.isPlaying = true;
+  // The AudioContext can be "suspended" right after upload (a file-dialog click
+  // is not always a user-activation gesture). We must WAIT for resume() to
+  // finish before starting the source — otherwise the buffer plays into a
+  // suspended context and you get silence (the "play too fast = no sound" bug).
+  state.startingPlayback = true;
+  const ctx = state.audioContext;
 
-  // Sync the Image/Video source (if a video) to the playhead and let it run.
-  if (state.mediaVideo) {
-    try {
-      const dur = state.mediaVideo.duration;
-      if (dur && isFinite(dur)) state.mediaVideo.currentTime = state.pauseOffset % dur;
-      state.mediaVideo.play().catch(() => {});
-    } catch (e) {}
-  }
+  const begin = () => {
+    state.startingPlayback = false;
+    if (state.isPlaying || !state.audioBuffer) return;
 
-  state.source.onended = () => {
-    if (state.isPlaying) {
-      stop();
+    state.source = ctx.createBufferSource();
+    state.source.buffer = state.audioBuffer;
+    state.source.connect(ctx.destination);
+    state.source.start(0, state.pauseOffset);
+    state.startTime = ctx.currentTime;
+    state.isPlaying = true;
+
+    // Sync the Image/Video source (if a video) to the playhead and let it run.
+    if (state.mediaVideo) {
+      try {
+        const dur = state.mediaVideo.duration;
+        if (dur && isFinite(dur)) state.mediaVideo.currentTime = state.pauseOffset % dur;
+        state.mediaVideo.play().catch(() => {});
+      } catch (e) {}
     }
+
+    state.source.onended = () => { if (state.isPlaying) stop(); };
+
+    $('playBtn').innerHTML = '<span class="ico pause"></span><span>Pause</span>';
+    setStatus('Playing', 'ready');
+    loop();
   };
 
-  $('playBtn').innerHTML = '<span class="ico pause"></span><span>Pause</span>';
-  setStatus('Playing', 'ready');
-  loop();
+  if (ctx.state !== 'running' && typeof ctx.resume === 'function') {
+    let done = false;
+    const go = () => { if (!done) { done = true; begin(); } };
+    try {
+      const p = ctx.resume();
+      if (p && typeof p.then === 'function') p.then(go).catch(go);
+      else go();
+    } catch (e) { go(); }
+    // Safety net in case resume() never settles on some browsers.
+    setTimeout(go, 400);
+  } else {
+    begin();
+  }
 }
 
 function pause() {
+  state.startingPlayback = false;
   if (!state.isPlaying) return;
   state.pauseOffset = getCurrentTime();
   state.source.onended = null;
@@ -5641,6 +5659,7 @@ function pause() {
 }
 
 function stop() {
+  state.startingPlayback = false;
   if (state.source) {
     state.source.onended = null;
     try { state.source.stop(); } catch (e) {}

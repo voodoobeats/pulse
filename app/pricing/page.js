@@ -6,8 +6,8 @@ import { fbTrack } from '../fbpixel';
 import PricingBg from './PricingBg';
 
 const MONTHLY = '9.99';
-const YEARLY_PER_MONTH = '8.33';
-const YEARLY_TOTAL = '99.99';
+const YEARLY_PER_MONTH = '7.99';
+const YEARLY_TOTAL = '95.90';
 const TRIAL_DAYS = 7;
 
 export default function PricingPage() {
@@ -121,7 +121,7 @@ export default function PricingPage() {
           Monthly
         </button>
         <button className={yearly ? 'active' : ''} onClick={() => setBilling('yearly')}>
-          Yearly <span className="save">-17%</span>
+          Yearly <span className="save">-20%</span>
         </button>
       </div>
 

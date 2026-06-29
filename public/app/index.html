@@ -6,7 +6,7 @@
 <title>PULSE — Music Visualizer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@300;400;500;700&family=Tenor+Sans&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Tenor+Sans&display=swap" rel="stylesheet">
 <style>
   :root {
     /* chasm palette — cool indigo/cyan base with neon pops */
@@ -87,7 +87,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-family: 'Fraunces', serif;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size: 22px;
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -191,9 +191,8 @@
     justify-content: space-between;
   }
   .section h3 .num {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-weight: 400;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-weight: 500;
     color: var(--accent);
     font-size: 14px;
     letter-spacing: 0;
@@ -586,14 +585,13 @@
     align-items: center;
     justify-content: center;
     color: var(--ink-faint);
-    font-family: 'Fraunces', serif;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     text-align: center;
     pointer-events: none;
   }
   .empty-state .big {
-    font-size: 64px;
-    font-weight: 300;
-    font-style: italic;
+    font-size: 60px;
+    font-weight: 400;
     color: var(--ink-faint);
     margin-bottom: 16px;
     letter-spacing: -0.02em;
@@ -768,7 +766,7 @@
     width: min(440px, 92vw); background: var(--panel); border: 1px solid var(--line-2);
     border-radius: 14px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   }
-  .export-card h3 { font-family: 'Fraunces', serif; font-style: italic; font-size: 22px; margin: 0 0 4px; color: var(--ink); }
+  .export-card h3 { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -0.01em; margin: 0 0 4px; color: var(--ink); }
   .export-card .sub { font-size: 12px; color: var(--ink-dim); margin: 0 0 16px; }
   .export-card label.fld { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
   .export-card input[type="text"] {
@@ -829,7 +827,7 @@
     width: min(640px, 95vw); background: var(--panel); border: 1px solid var(--line-2);
     border-radius: 14px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   }
-  .auto-card h3 { font-family: 'Fraunces', serif; font-style: italic; font-size: 22px; margin: 0 0 4px; color: var(--ink); }
+  .auto-card h3 { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -0.01em; margin: 0 0 4px; color: var(--ink); }
   .auto-card .sub { font-size: 12px; color: var(--ink-dim); margin: 0 0 16px; }
   .auto-choose { display: flex; gap: 12px; }
   .auto-choose button {
@@ -853,9 +851,10 @@
   .auto-scrub .btn { padding: 6px 10px; font-size: 11px; }
   .auto-scrub .num { width: 56px; text-align: right; font-size: 12px; color: var(--accent); }
   .render-overlay .label {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 32px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-size: 30px;
     color: var(--ink);
   }
   .render-overlay .stage-name {

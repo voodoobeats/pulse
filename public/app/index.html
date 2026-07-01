@@ -1598,6 +1598,7 @@
             <div class="field"><label>Amount <span class="v" id="spectrumV">70%</span></label><input type="range" id="spectrum" min="0" max="100" value="70" /></div>
             <div class="field"><label>Max Height <span class="v" id="specMaxHV">22%</span></label><input type="range" id="specMaxH" min="5" max="50" value="22" /></div>
             <div class="field"><label>Opacity <span class="v" id="specOpacityV">100%</span></label><input type="range" id="specOpacity" min="0" max="100" value="100" /></div>
+            <div class="field"><label>Glow <span class="v" id="specGlowV">0%</span></label><input type="range" id="specGlow" min="0" max="200" value="0" /></div>
 
             <div class="toggles" style="margin:8px 0">
               <label><input type="checkbox" id="specFlipH"><span>Mirror horizontal</span></label>
@@ -1742,6 +1743,7 @@
             <div class="field"><label>Scale <span class="v" id="mediaScaleV">100%</span></label><input type="range" id="mediaScale" min="5" max="400" value="100" /></div>
             <div class="field"><label>Rotation <span class="v" id="mediaRotV">0°</span></label><input type="range" id="mediaRot" min="-180" max="180" value="0" /></div>
             <div class="field"><label>Opacity <span class="v" id="mediaOpacityV">100%</span></label><input type="range" id="mediaOpacity" min="0" max="100" value="100" /></div>
+            <div class="field"><label>Glow <span class="v" id="mediaGlowV">0%</span></label><input type="range" id="mediaGlow" min="0" max="200" value="0" /></div>
             <div class="field"><label>Blend Mode</label>
               <select id="mediaBlend" class="fx-select">
                 <option value="source-over" selected>Normal</option>
@@ -2445,7 +2447,7 @@ let textUid = 1;
 function defaultText() {
   return {
     id: textUid++, content: 'Your text', font: 'cormorant', align: 'center',
-    size: 1, rot: 0, opacity: 1, color: '#ffffff', x: 0.5, y: 0.88,
+    size: 1, rot: 0, opacity: 1, glow: 0, color: '#ffffff', x: 0.5, y: 0.88,
   };
 }
 function textKey(inst) { return 'tx_' + inst.id; }
@@ -2488,6 +2490,7 @@ function buildTextInstanceEl(inst) {
     <div class="field"><label>Size <span class="v vSize">${pct(inst.size)}%</span></label><input type="range" data-k="size" min="20" max="300" value="${pct(inst.size)}"></div>
     <div class="field"><label>Rotation <span class="v vRot">${inst.rot}°</span></label><input type="range" data-k="rot" min="-180" max="180" value="${inst.rot}"></div>
     <div class="field"><label>Opacity <span class="v vOpacity">${pct(inst.opacity)}%</span></label><input type="range" data-k="opacity" min="0" max="100" value="${pct(inst.opacity)}"></div>
+    <div class="field"><label>Glow <span class="v vGlow">${pct(inst.glow)}%</span></label><input type="range" data-k="glow" min="0" max="200" value="${pct(inst.glow)}"></div>
     <button type="button" class="fx-posbtn" data-place="${key}">⊕ Set position — drag on preview</button>
     <div class="numrow"><span>Pos</span>
       <label>X<input type="number" data-k="x" step="1" value="${Math.round(inst.x * d.w)}"></label>
@@ -2586,12 +2589,12 @@ async function analyzeLogoPalette(img) {
 [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
   'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset', 'shockSize', 'shockSpeed', 'shockRange',
-  'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle',
+  'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle', 'specGlow',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
-  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'mediaGlow', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
   'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ].forEach(id => {
@@ -2806,10 +2809,10 @@ const fxBypassed = {};
 const automations = {};
 // Sliders that read their value per-frame through pval() and can be automated.
 const AUTOMATABLE = [
-  'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig', 'spectrum', 'effects',
+  'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig', 'spectrum', 'effects', 'specGlow',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
-  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'mediaGlow', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
   'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ];
@@ -4293,7 +4296,8 @@ function drawFrame(ctx, w, h, time, bass) {
         break;
       case 'image':
         if (tgImage && state.mediaEl) {
-          drawMediaLayer(ctx, w, h, state.mediaEl, mediaScale, mediaRot, flarePos.image.x, flarePos.image.y, mediaOpacity, mediaBlend);
+          const mediaGlow = $('mediaGlow') ? pval('mediaGlow') / 100 : 0;
+          drawMediaLayer(ctx, w, h, state.mediaEl, mediaScale, mediaRot, flarePos.image.x, flarePos.image.y, mediaOpacity, mediaBlend, mediaGlow);
         }
         break;
       case 'rgbsplit':
@@ -4941,6 +4945,14 @@ function drawMirrorSpectrum(ctx, w, h, time, bassAdj, effectsAmt, mode) {
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
 
+  // Optional glow (bloom) around the bars — same idea as the Logo/Particle glow.
+  const specGlow = $('specGlow') ? pval('specGlow') / 100 : 0;
+  if (specGlow > 0.01) {
+    const gc = colorMode === 'gradient' ? colB : colSingle;
+    ctx.shadowColor = rgba(gc, 1);
+    ctx.shadowBlur = specGlow * Math.max(w, h) * 0.02;
+  }
+
   // Draw one bar centered at (px,py), grown perpendicular to `ang` (local -Y).
   function bar(px, py, ang, bw, bh, alpha) {
     ctx.save();
@@ -5224,7 +5236,7 @@ function drawBlurLayer(ctx, w, h, blurPx) {
 // IMAGE / VIDEO layer — drawn with scale, rotation, position & opacity.
 // For videos, the current frame is drawn (seeked frame-exact during render).
 // ============================================================
-function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity, blend) {
+function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity, blend, glow) {
   const iw = el.videoWidth || el.naturalWidth || el.width || 0;
   const ih = el.videoHeight || el.naturalHeight || el.height || 0;
   if (!iw || !ih) return;
@@ -5237,6 +5249,11 @@ function drawMediaLayer(ctx, w, h, el, scale, rotDeg, posX, posY, opacity, blend
   ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
   ctx.translate(px, py);
   if (rotDeg) ctx.rotate(rotDeg * Math.PI / 180);
+  // Optional glow (bloom) — a soft light halo around the image/video.
+  if (glow && glow > 0.01) {
+    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    ctx.shadowBlur = glow * Math.min(w, h) * 0.05;
+  }
   try { ctx.drawImage(el, -drawW / 2, -drawH / 2, drawW, drawH); } catch (e) {}
   ctx.restore();
 }
@@ -5550,9 +5567,17 @@ function drawTextEffect(ctx, w, h, bassAdj, highAdj, inst) {
   ctx.translate(px, py);
   if (rot) ctx.rotate(rot * Math.PI / 180);
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(0,0,0,0.75)';
-  ctx.shadowBlur = h * 0.012;
-  ctx.shadowOffsetY = 1;
+  const glow = inst.glow == null ? 0 : inst.glow;
+  if (glow > 0.01) {
+    // Colored glow (bloom) in the text's own color instead of the drop shadow.
+    ctx.shadowColor = color;
+    ctx.shadowBlur = glow * size * 0.7;
+    ctx.shadowOffsetY = 0;
+  } else {
+    ctx.shadowColor = 'rgba(0,0,0,0.75)';
+    ctx.shadowBlur = h * 0.012;
+    ctx.shadowOffsetY = 1;
+  }
   ctx.fillStyle = color;
   ctx.font = `${f.weight} ${size}px ${f.family}`;
   const lineH = size * 1.28;
@@ -8089,12 +8114,12 @@ drawEqWidget();
 const PRESET_SLIDER_IDS = [
   'logoSize', 'logoBounce', 'bgBounce', 'desat', 'dark', 'shake', 'vig',
   'spectrum', 'effects', 'crf', 'shockThresh', 'shockReset', 'shockSize', 'shockSpeed', 'shockRange',
-  'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle',
+  'specFStart', 'specFEnd', 'specBands', 'specMaxH', 'specRadius', 'specAngle', 'specGlow',
   'specDur', 'specOff', 'specThick', 'specSmooth',
   'shortFadeIn', 'shortFadeOut',
   'glowBgInt', 'glowBgSize', 'logoGlowInt', 'logoGlowSize', 'grainAmt',
   'partAmount', 'partSize', 'partGlow', 'partOpacity', 'partSpeed',
-  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'fadeDur', 'fadeBlurStr',
+  'shakeBlur', 'rgbSplit', 'mediaScale', 'mediaRot', 'mediaOpacity', 'mediaGlow', 'fadeDur', 'fadeBlurStr',
   'textSize', 'textRot', 'blurStr',
   'logoOpacity', 'vigOpacity', 'textOpacity', 'specOpacity',
 ];
@@ -8131,7 +8156,7 @@ function gatherPreset() {
     })),
     textInstances: textInstances.map(t => ({
       content: t.content, font: t.font, align: t.align, size: t.size,
-      rot: t.rot, opacity: t.opacity, color: t.color, x: t.x, y: t.y,
+      rot: t.rot, opacity: t.opacity, glow: t.glow, color: t.color, x: t.x, y: t.y,
     })),
     order: fxOrder.slice(),
     bypass: { ...fxBypassed },
@@ -8307,7 +8332,7 @@ function applyPreset(preset, silent) {
         if (typeof t.font === 'string') inst.font = t.font;
         if (typeof t.align === 'string') inst.align = t.align;
         if (typeof t.color === 'string') inst.color = t.color;
-        ['size', 'rot', 'opacity', 'x', 'y'].forEach(k => { if (typeof t[k] === 'number') inst[k] = t[k]; });
+        ['size', 'rot', 'opacity', 'glow', 'x', 'y'].forEach(k => { if (typeof t[k] === 'number') inst[k] = t[k]; });
       }
       textInstances.push(inst);
       flarePos[textKey(inst)] = inst;
@@ -8563,13 +8588,13 @@ function getDefaultPreset() {
       spectrum: '70', effects: '85', crf: '23',
       shockThresh: '50', shockReset: '5', shockSize: '100', shockSpeed: '100', shockRange: '100',
       specFStart: '20', specFEnd: '8000', specBands: '48',
-      specMaxH: '22', specRadius: '22', specAngle: '0', specDur: '100', specOff: '0',
+      specMaxH: '22', specRadius: '22', specAngle: '0', specGlow: '0', specDur: '100', specOff: '0',
       specThick: '55', specSmooth: '30',
       shortFadeIn: '1', shortFadeOut: '3',
       glowBgInt: '100', glowBgSize: '100', logoGlowInt: '100', logoGlowSize: '100',
       grainAmt: '50',
       partAmount: '24', partSize: '100', partGlow: '100', partOpacity: '100', partSpeed: '100',
-      shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100',
+      shakeBlur: '100', rgbSplit: '40', mediaScale: '100', mediaRot: '0', mediaOpacity: '100', mediaGlow: '0',
       fadeDur: '15', fadeBlurStr: '50',
       textSize: '100', textRot: '0', blurStr: '40',
       logoOpacity: '100', vigOpacity: '100', textOpacity: '100', specOpacity: '100',
